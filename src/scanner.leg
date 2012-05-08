@@ -46,6 +46,7 @@ INTEGER         = < '0' > ![xob]
 STRING          = ["] < STRING_CHAR* > ["]
                 
 Punctuation     = ':'       !IDENT_REST             { $$ = T_COLON }
+                | '=>'                              { $$ = T_HASHROCKET }
                 | '('                               { $$ = T_L_PAREN }
                 | ')'                               { $$ = T_R_PAREN }
                 | '['                               { $$ = T_L_BRACKET }
@@ -66,7 +67,7 @@ Operator        = '+'                               { $$ = T_OP_PLUS }
                 | '>'                               { $$ = T_OP_GT }
                 | '<='                              { $$ = T_OP_LTE }
                 | '<'                               { $$ = T_OP_LT }
-                | '='                               { $$ = T_OP_ASSIGN }
+                | '='       !'>'                    { $$ = T_OP_ASSIGN }
     
 Keyword         = 'def'     !IDENT_REST             { $$ = T_DEF }
                 | 'while'   !IDENT_REST             { $$ = T_WHILE }
@@ -76,6 +77,7 @@ Keyword         = 'def'     !IDENT_REST             { $$ = T_DEF }
                 | 'true'    !IDENT_REST             { $$ = T_TRUE }
                 | 'false'   !IDENT_REST             { $$ = T_FALSE }
                 | 'pass'    !IDENT_REST             { $$ = T_PASS }
+                | 'return'  !IDENT_REST             { $$ = T_RETURN }
 
 SYMBOL          = ':' < IDENT_START IDENT_REST* >
 IDENT           = < IDENT_START IDENT_REST* >
@@ -145,6 +147,9 @@ static int handle_leading_whitespace(yycontext *ctx, int len) {
 scanner_t* scanner_create_for_file(FILE *file) {
     yycontext *ctx = malloc(sizeof(yycontext));
     if (ctx) {
+        ctx->text               = malloc(16);
+        ctx->text[0]            = '\0';
+        ctx->textlen            = 16;
         ctx->file               = file;
         ctx->indent_depth       = 1;
         ctx->indents[0]         = 0;
@@ -185,7 +190,7 @@ token_t scanner_get_next_token(scanner_t *s, const char **text, int *len) {
         
     } else if (ctx->is_eof) {
         out_token = T_EOF;
-    
+        
     } else {
         while (1) {
             if (!yyparse(ctx)) {
@@ -196,10 +201,18 @@ token_t scanner_get_next_token(scanner_t *s, const char **text, int *len) {
             
             if (ctx->yy == T_EOF) {
                 ctx->is_eof = 1;
+                
                 // TODO: sanity check; technically there should be pending outdents
                 ctx->pending_dents = ctx->indent_depth - 1;
                 ctx->pending_is_indent = 0;
                 out_token = T_OUTDENT;
+                
+                /* ensure every input line has an EOL so that statements are terminated */
+                if (!ctx->was_newline) {
+                    ctx->pending_dents++;
+                    out_token = T_EOL;
+                }
+                
                 break;
             
             } else if (ctx->yy == T_EOL) {

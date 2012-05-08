@@ -9,6 +9,7 @@ void            ast_cleanup_context(context_t *ctx);
 int             ast_len(context_t *ctx, ast_id_t cell);
 ast_id_t        ast_cell_next(context_t *ctx, ast_id_t cell);
 ast_value_t*    ast_cell_value(context_t *ctx, ast_id_t cell);
+ast_id_t        ast_cell_cell(context_t *ctx, ast_id_t cell);
 
 ast_id_t        ast_get_free_cell(context_t *ctx);
 ast_id_t        ast_get_free_value(context_t *ctx);

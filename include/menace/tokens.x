@@ -13,25 +13,28 @@ TOKEN(T_IF,             "if"),
 TOKEN(T_ELSEIF,         "elseif"),
 TOKEN(T_ELSE,           "else"),
 TOKEN(T_PASS,           "pass"),
+TOKEN(T_RETURN,         "return"),
 
 TOKEN(T_OP_PLUS,        "+"),
 TOKEN(T_OP_MINUS,       "-"),
-TOKEN(T_OP_POW,         "**"),
 TOKEN(T_OP_TIMES,       "*"),
 TOKEN(T_OP_DIV,         "/"),
+TOKEN(T_OP_POW,         "**"),
+
 TOKEN(T_OP_EQ,          "=="),
 TOKEN(T_OP_NEQ,         "!="),
-TOKEN(T_OP_ASSIGN,      "="),
-
-TOKEN(T_COLON,          ":"),
-TOKEN(T_COMMA,          ","),
-TOKEN(T_DOT,            "."),
-                        
 TOKEN(T_OP_LT,          "<"),
 TOKEN(T_OP_LTE,         "<="),
 TOKEN(T_OP_GT,          ">"),
 TOKEN(T_OP_GTE,         ">="),
 
+TOKEN(T_OP_ASSIGN,      "="),
+
+TOKEN(T_HASHROCKET,     "=>"),
+TOKEN(T_COLON,          ":"),
+TOKEN(T_COMMA,          ","),
+TOKEN(T_DOT,            "."),
+                        
 TOKEN(T_L_PAREN,        "("),
 TOKEN(T_R_PAREN,        ")"),
 TOKEN(T_L_BRACE,        "{"),

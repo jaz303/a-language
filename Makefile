@@ -11,6 +11,7 @@ SCANNER		=	src/scanner.c
 OBJECTS		=	src/ast.o \
 				src/debug.o \
 				src/global.o \
+				src/parser.o \
 				src/scanner.o \
 				src/token_names.o
 
@@ -21,6 +22,9 @@ obj: $(OBJECTS)
 scanner: src/scanner.c
 
 src/scanner.c: src/scanner.leg
+	leg $< > $@
+
+src/parser.c: src/parser.leg
 	leg $< > $@
 
 build:
@@ -45,8 +49,8 @@ clean:
 build/test_parser: all build src/tests/test_parser.o
 	gcc -o $@ $(LDFLAGS) src/tests/test_parser.o $(OBJECTS)
 
-test_parser: build/test_parser
-	@./test/parsing/test_all
-
 build/test_scanner_repl: all build src/tests/test_scanner_repl.o
 	gcc -o $@ $(LDFLAGS) src/tests/test_scanner_repl.o $(OBJECTS)
+
+test_parser: build/test_parser
+	@./test/parsing/test_all

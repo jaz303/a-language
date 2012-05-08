@@ -1,0 +1,150 @@
+%{
+#include "menace/global.h"
+#include "menace/parser.h"
+#include "menace/scanner.h"
+#include "menace/ast.h"
+
+#include <stdio.h>
+
+#define YY_INPUT(buf, result, max_size)                                                 \
+{                                                                                       \
+    int yyc = scanner_get_next_token(ctx->scanner, &ctx->token_text, &ctx->token_len);  \
+    result = (T_EOF == yyc) ? 0 : (*(buf)=yyc, 1);                                      \
+}
+
+#define YY_CTX_LOCAL
+#define YYSTYPE             ast_id_t
+#define YY_PARSE(T)         static T
+
+#define YY_CTX_MEMBERS                  \
+    scanner_t           *scanner;       \
+    context_t           *context;       \
+    const char          *token_text;    \
+    int                 token_len;      \
+    char                *error;
+%}
+
+# Points to consider:
+# Assignment should probably be an expression
+# Function_Args should always be visited, even if empty (so we get AST node)
+
+Statement_Block         = INDENT EOL* (Statement EOL*)+ OUTDENT
+
+Statement               = If_Statement
+                        | While_Statement
+                        | Pass_Statement
+                        | Assign_Statement
+                        | Expression_Statement
+                        | Return_Statement
+                        | Named_Function_Def
+                    
+If_Statement            = If_Part Elseif_Part* Else_Part?
+If_Part                 = IF - Expression Block_Prelude Statement_Block
+Elseif_Part             = ELSEIF - Expression Block_Prelude Statement_Block
+Else_Part               = ELSE Block_Prelude Statement_Block
+
+While_Statement         = WHILE - Expression Block_Prelude Statement_Block
+Pass_Statement          = PASS - EOL
+Assign_Statement        = IDENT - OP_ASSIGN - Expression - EOL
+Expression_Statement    = Expression - EOL
+Return_Statement        = RETURN - Expression? EOL
+
+Named_Function_Def      = DEF - IDENT L_PAREN - Parameter_List - R_PAREN
+                          Block_Prelude
+                          Statement_Block
+                          
+Parameter_List          = Parameters?
+Parameters              = IDENT - (COMMA - Parameters)?
+
+Expression              = Exp1
+Exp1                    = Exp2 ((OP_PLUS | OP_MINUS) - Exp2)*   -
+Exp2                    = Exp3 ((OP_TIMES | OP_DIV) - Exp3)*    -
+Exp3                    = Value                                 -
+                        | Function_Call                         -
+                        | IDENT                                 -
+                        | L_PAREN - Expression - R_PAREN        -
+                        
+Value                   = INTEGER
+                        | STRING
+                        | SYMBOL
+                        | TRUE
+                        | FALSE
+                        | Array
+                        | Dict
+                        
+Function_Call           = IDENT L_PAREN - Function_Args? - R_PAREN
+Function_Args           = Expression (COMMA - Function_Args)?
+                        
+Array                   = L_BRACKET - Array_Elements? - R_BRACKET
+Array_Elements          = Expression (COMMA - Array_Elements)?
+                        
+Dict                    = L_BRACE - Dict_Elements? - R_BRACE
+Dict_Elements           = Dict_Pair (COMMA - Dict_Pair)?
+Dict_Pair               = Expression HASHROCKET - Expression
+                        
+Block_Prelude           = - COLON - EOL
+-                       = WHITESPACE*
+
+# This stuff is auto-generated from tokens.x by `rake parser_tokens`
+# BEGIN-TOKENS
+INTEGER = [\001]
+STRING = [\002]
+IDENT = [\003]
+SYMBOL = [\004]
+TRUE = [\005]
+FALSE = [\006]
+DEF = [\007]
+WHILE = [\010]
+IF = [\011]
+ELSEIF = [\012]
+ELSE = [\013]
+PASS = [\014]
+RETURN = [\015]
+OP_PLUS = [\016]
+OP_MINUS = [\017]
+OP_TIMES = [\020]
+OP_DIV = [\021]
+OP_POW = [\022]
+OP_EQ = [\023]
+OP_NEQ = [\024]
+OP_LT = [\025]
+OP_LTE = [\026]
+OP_GT = [\027]
+OP_GTE = [\030]
+OP_ASSIGN = [\031]
+HASHROCKET = [\032]
+COLON = [\033]
+COMMA = [\034]
+DOT = [\035]
+L_PAREN = [\036]
+R_PAREN = [\037]
+L_BRACE = [\040]
+R_BRACE = [\041]
+L_BRACKET = [\042]
+R_BRACKET = [\043]
+WHITESPACE = [\044]
+EOL = [\045]
+EOF = [\046]
+INDENT = [\047]
+OUTDENT = [\050]
+ERROR = [\051]
+# END-TOKENS
+
+%%
+
+parser_t *parser_create(context_t *c, scanner_t *s) {
+    yycontext *parser = malloc(sizeof(yycontext));
+    memset(parser, 0, sizeof(yycontext));
+    parser->scanner = s;
+    parser->context = c;
+    return (parser_t*)parser;
+}
+
+ast_id_t parser_parse(parser_t *p) {
+    if (!yyparse((yycontext*)p)) {
+        return 0;
+    } else {
+        return 1;
+        return ((yycontext*)p)->yy;
+    }
+}

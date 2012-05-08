@@ -4,58 +4,143 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#ifdef _LP64
-	typedef void*       VALUE;
-	typedef int64_t     INT;
-	typedef uint64_t    INTERN;
-#else
-	typedef void*       VALUE;
-	typedef int32_t     INT;
-	typedef uint32_t    INTERN;
-#endif
-
-#define INT_BIT             0x01
-#define SPECIAL_BIT         0x02
-#define TAG_MASK            (INT_BIT | SPECIAL_BIT)
-
-#define VALUE_IS_PTR(v)     (((INT)v & TAG_MASK) == 0)
-#define MK_PTR(p)           ((VALUE)p)
-#define PTR(v)              ((void*)v)
-
-#define INT_SHIFT           1
-#define VALUE_IS_INT(v)     (((INT)v & INT_BIT) == INT_BIT)
-#define MK_INTVAL(i)        ((VALUE)(((INT)(i) << INT_SHIFT) | INT_BIT))
-#define INTVAL(v)           (((INT)v) >> INT_SHIFT)
-
-#define SPECIAL_SHIFT       2
-#define SPECIAL_NIL         0x00
-#define SPECIAL_FALSE       0x01
-#define SPECIAL_TRUE        0x03
-#define SPECIAL_SYMBOL      0x04
-
-#define kNil                ((VALUE)(SPECIAL_BIT | (SPECIAL_NIL << SPECIAL_SHIFT)))
-#define kFalse              ((VALUE)(SPECIAL_BIT | (SPECIAL_FALSE << SPECIAL_SHIFT)))
-#define kTrue               ((VALUE)(SPECIAL_BIT | (SPECIAL_TRUE << SPECIAL_SHIFT)))
+/* define this to pack floats/colors/dates into VALUE types (64-bit only) */
+/* (TODO!!!) */
+// #define USE_MOAR_PACKING
 
 /*
  * Object types
  */
  
 typedef enum {
-    OBJ_STRING      = 1,
-    OBJ_FN,
-    OBJ_NATIVE_FN,
-    OBJ_OPAQUE,
-    OBJ_FLOAT,
-    OBJ_DATE,
-    OBJ_MONEY,
-    OBJ_COLOR,
-    OBJ_ARRAY,
-    OBJ_DICT,
-    OBJ_OBJECT,
-    OBJ_REGEXP
+    INTEGER_T           = 1,
+    BOOLEAN_T,
+    SYMBOL_T,
+    NULL_T,
+    
+    FLOAT_T,
+    
+    STRING_T,
+    FUNCTION_T,
+    NATIVE_FUNCTION_T,
+    OPAQUE_T,
+    DATE_T,
+    MONEY_T,
+    COLOR_T,
+    ARRAY_T,
+    DICT_T,
+    OBJECT_T,
+    REGEXP_T
 } obj_type_t;
 
+#ifdef _LP64
+	typedef void*       VALUE;
+	typedef int64_t     INT;
+    typedef uint64_t    UINT;
+	typedef uint64_t    INTERN;
+#else
+	typedef void*       VALUE;
+	typedef int32_t     INT;
+    typedef uint32_t    UINT;
+	typedef uint32_t    INTERN;
+#endif
+
+/*
+ * VM instruction type
+ */
+ 
+typedef union {
+    INT     o;      /* opcode */
+    INT     i;      /* integer operand */
+    UINT    u;      /* unsigned integer operand */
+    VALUE   v;      /* value operand */
+} inst_t;
+
+/*
+ * 000000 - ptr
+ * 000001 - int
+ * 000010 - null
+ * 000110 - false
+ * 001110 - true
+ * 001010 - symbol
+ */
+
+#define VALUE_IS_PTR(v)             (((INT)v & 0x03) == 0)
+#define MK_PTR(p)                   ((VALUE)p)
+#define PTR(v)                      ((void*)v)
+
+#define VALUE_IS_INT(v)             (((INT)v & 0x01) == 0x01)
+#define MK_INTVAL(i)                ((VALUE)((((INT)(i)) << 1) | 0x01))
+#define INTVAL(v)                   (((INT)v) >> 1)
+
+#define kNull                       (0x02)
+
+#define VALUE_IS_BOOL(v)            ((((INT)v) & 0x06) == 0x06)
+#define kFalse                      (0x06)
+#define kTrue                       (0x0C)
+
+#define VALUE_IS_SYMBOL(v)          ((((INTERN)v) & 0x0A) == 0x0A)
+#define MK_SYMBOL(i)                ((VALUE)((((INTERN)(i)) << 4) & 0x0A))
+#define SYMBOLVAL(v)                (((INTERN)v) >> 4)
+
+#define AS_OBJECT(v)                ((obj_t*)v)
+#define IS_OBJECT(v)                (VALUE_IS_PTR(v))
+
+#define OBJ_IS_FLOAT(v)             (AS_OBJECT(v)->type == FLOAT_T)
+#define OBJ_IS_COLOR(v)             (AS_OBJECT(v)->type == COLOR_T)
+#define OBJ_IS_STRING(v)            (AS_OBJECT(v)->type == STRING_T)
+#define OBJ_IS_FUNCTION(v)          (AS_OBJECT(v)->type == FUNCTION_T)
+#define OBJ_IS_NATIVE_FUNCTION(v)   (AS_OBJECT(v)->type == NATIVE_FUNCTION_T)
+#define OBJ_IS_OPAQUE(v)            (AS_OBJECT(v)->type == OPAQUE_T)
+#define OBJ_IS_DATE(v)              (AS_OBJECT(v)->type == DATE_T)
+#define OBJ_IS_MONEY(v)             (AS_OBJECT(v)->type == MONEY_T)
+#define OBJ_IS_ARRAY(v)             (AS_OBJECT(v)->type == ARRAY_T)
+#define OBJ_IS_DICT(v)              (AS_OBJECT(v)->type == DICT_T)
+#define OBJ_IS_OBJECT(v)            (AS_OBJECT(v)->type == OBJECT_T)
+#define OBJ_IS_REGEXP(v)            (AS_OBJECT(v)->type == REGEXP_T)
+
+#define VALUE_IS_FLOAT(v)           (IS_OBJECT(v) && AS_OBJECT(v)->type == FLOAT_T)
+#define VALUE_IS_COLOR(v)           (IS_OBJECT(v) && AS_OBJECT(v)->type == COLOR_T)
+#define VALUE_IS_STRING(v)          (IS_OBJECT(v) && AS_OBJECT(v)->type == STRING_T)
+#define VALUE_IS_FUNCTION(v)        (IS_OBJECT(v) && AS_OBJECT(v)->type == FUNCTION_T)
+#define VALUE_IS_NATIVE_FUNCTION(v) (IS_OBJECT(v) && AS_OBJECT(v)->type == NATIVE_FUNCTION_T)
+#define VALUE_IS_OPAQUE(v)          (IS_OBJECT(v) && AS_OBJECT(v)->type == OPAQUE_T)
+#define VALUE_IS_DATE(v)            (IS_OBJECT(v) && AS_OBJECT(v)->type == DATE_T)
+#define VALUE_IS_MONEY(v)           (IS_OBJECT(v) && AS_OBJECT(v)->type == MONEY_T)
+#define VALUE_IS_ARRAY(v)           (IS_OBJECT(v) && AS_OBJECT(v)->type == ARRAY_T)
+#define VALUE_IS_DICT(v)            (IS_OBJECT(v) && AS_OBJECT(v)->type == DICT_T)
+#define VALUE_IS_OBJECT(v)          (IS_OBJECT(v) && AS_OBJECT(v)->type == OBJECT_T)
+#define VALUE_IS_REGEXP(v)          (IS_OBJECT(v) && AS_OBJECT(v)->type == REGEXP_T)
+
+#define VALUE_IS_TRUTHY(v)          (((INT)(v)) != kNull && ((INT)(v)) != kFalse)
+
+/*
+ * Object types
+ */
+ 
+typedef struct gc_header {
+    char _;
+} gc_header_t;
+
+typedef struct obj {
+    gc_header_t     gc;
+    obj_type_t      type;
+} obj_t;
+
+typedef struct obj_array {
+    obj_t       obj;                /* header */
+    VALUE       *values;            /* array contents */
+    UINT        length;             /* # of elements in array */
+    UINT        capacity;           /* size of backing store */
+} obj_array_t;
+
+typedef struct obj_function {
+    obj_t       obj;                /* header */
+    UINT        frame_size;         /* how much space must we reserve for args/locals? */
+    inst_t      *code;              /* opcodes */
+    /* source code? */
+    /* AST? */
+} obj_function_t;
 
 /*
  * Primitive types - gnarly
@@ -63,18 +148,6 @@ typedef enum {
 
 typedef int32_t INTEGER;
 typedef uint32_t COLOR;
-
-/*
- * Array-backed memory pool
- */
-
-typedef struct {
-    size_t          element_size;
-    int32_t         size;
-    char            *data;
-    int32_t         *free_list;
-    int32_t         free_pos;
-} array_pool_t;
 
 /*
  * Token types
@@ -96,11 +169,12 @@ extern const char const *token_names[];
 
 typedef uint32_t ast_id_t;
 
-#define AST_IS_CELL(ix)     ((ix & 0x80000000) == 0x80000000)
-#define AST_IS_VALUE(ix)    ((ix & 0x80000000) == 0)
-#define AST_MAKE_CELL(ix)   (ix | 0x80000000)
-#define AST_MAKE_VALUE(ix)  (ix)
-#define AST_INDEX(ix)       (ix & 0x7fffffff)
+#define AST_IS_CELL(ix)         ((ix & 0x80000000) == 0x80000000)
+#define AST_IS_VALUE(ix)        ((ix & 0x80000000) == 0)
+#define AST_MAKE_CELL(ix)       (ix | 0x80000000)
+#define AST_MAKE_VALUE(ix)      (ix)
+#define AST_INDEX(ix)           (ix & 0x7fffffff)
+#define AST_GET_VALUE(ctx, v)   (ctx->ast_pool->values[AST_INDEX(v)])
 
 typedef struct {
     ast_id_t car;   /* either a cell or a value */
@@ -121,18 +195,22 @@ typedef union {
         AST_LITERAL_BOOL,
         AST_LITERAL_STRING,
         AST_LITERAL_COLOR,
-        AST_SYMBOL,
+        AST_LITERAL_IDENT,
+        AST_LITERAL_SYMBOL,
         AST_STATEMENTS,
         AST_WHILE,
         AST_IF,
         AST_PASS,
         AST_PARAMETER_LIST,
+        AST_BINARY_OP,
+        AST_UNARY_OP,
     }               node_type;
     INT             val_int;
     unsigned char   val_color[4];
     char            *val_string;
 } ast_value_t;
 
+#define AST_LITERAL_MAX AST_LITERAL_SYMBOL
 
 typedef struct {
     ast_id_t        num_cells;
@@ -159,30 +237,47 @@ typedef struct {
  */
 
 typedef void scanner_t;
+typedef void parser_t;
 
 /*
- * Parser object
+ * VM Opcodes & State
  */
 
+#define OPCODE(code) OP_##code,
+typedef enum {
+#include "menace/opcodes.x"
+} opcode_t;
+#undef OPCODE
+
+#define OPCODE_MAX OP_HALT
+
 typedef struct {
-    context_t       *context;
-    scanner_t       *scanner;
-    token_t         current_token;
-    const char      *token_text;
-    int             token_len;
-    char            *error;
-} parser_t;
+    
+} vm_t;
 
 /* 
  * Utility Functions
  */
-
+ 
+int context_init(context_t *ctx);
 const char *token_get_name(token_t);
+UINT roundup2(UINT v);
 
 /* terminates */
 void fatal_error(const char *msg) __attribute__ ((noreturn));
 
 /* terminates */
 void memory_error() __attribute__ ((noreturn));
+
+/*
+ *
+ */
+ 
+#define CASSERT(ix, expn) typedef char __C_ASSERT_##ix##__[(expn)?1:-1] 
+
+CASSERT(1, sizeof(VALUE) == sizeof(INT));
+CASSERT(2, sizeof(VALUE) == sizeof(UINT));
+CASSERT(3, sizeof(VALUE) == sizeof(INTERN));
+CASSERT(4, sizeof(VALUE) == sizeof(inst_t));
 
 #endif

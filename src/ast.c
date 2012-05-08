@@ -87,6 +87,13 @@ ast_value_t* ast_cell_value(context_t *ctx, ast_id_t cell) {
     return &(ctx->ast_pool.values[AST_INDEX(value_ix)]);
 }
 
+ast_id_t ast_cell_cell(context_t *ctx, ast_id_t cell) {
+    assert(AST_IS_CELL(cell));
+    ast_id_t cell_ix = ctx->ast_pool.cells[AST_INDEX(cell)].car;
+    assert(AST_IS_CELL(cell_ix));
+    return cell_ix;
+}
+
 ast_id_t ast_get_free_cell(context_t *ctx) {
     if (ctx->ast_pool.next_free_cell_ix == ctx->ast_pool.num_cells) {
         grow_cell_pool(&ctx->ast_pool);
