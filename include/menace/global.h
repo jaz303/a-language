@@ -45,6 +45,8 @@ typedef enum {
 	typedef uint32_t    INTERN;
 #endif
 
+typedef float REAL;
+
 /*
  * VM instruction type
  */
@@ -64,24 +66,22 @@ typedef union {
  * 001110 - true
  * 001010 - symbol
  */
-
-#define VALUE_IS_PTR(v)             (((INT)v & 0x03) == 0)
+ 
 #define MK_PTR(p)                   ((VALUE)p)
 #define PTR(v)                      ((void*)v)
 
-#define VALUE_IS_INT(v)             (((INT)v & 0x01) == 0x01)
 #define MK_INTVAL(i)                ((VALUE)((((INT)(i)) << 1) | 0x01))
 #define INTVAL(v)                   (((INT)v) >> 1)
 
-#define kNull                       (0x02)
-
-#define VALUE_IS_BOOL(v)            ((((INT)v) & 0x06) == 0x06)
-#define kFalse                      (0x06)
-#define kTrue                       (0x0C)
-
-#define VALUE_IS_SYMBOL(v)          ((((INTERN)v) & 0x0A) == 0x0A)
 #define MK_SYMBOL(i)                ((VALUE)((((INTERN)(i)) << 4) & 0x0A))
 #define SYMBOLVAL(v)                (((INTERN)v) >> 4)
+
+#define MK_FLOATVAL(ctx, v)         ((void)v, NULL)
+#define FLOATVAL(v)                 (((obj_float_t*)(v))->value)
+
+#define kNull                       ((VALUE)0x02)
+#define kFalse                      ((VALUE)0x06)
+#define kTrue                       ((VALUE)0x0C)
 
 #define AS_OBJECT(v)                ((obj_t*)v)
 #define IS_OBJECT(v)                (VALUE_IS_PTR(v))
@@ -99,20 +99,24 @@ typedef union {
 #define OBJ_IS_OBJECT(v)            (AS_OBJECT(v)->type == OBJECT_T)
 #define OBJ_IS_REGEXP(v)            (AS_OBJECT(v)->type == REGEXP_T)
 
-#define VALUE_IS_FLOAT(v)           (IS_OBJECT(v) && AS_OBJECT(v)->type == FLOAT_T)
-#define VALUE_IS_COLOR(v)           (IS_OBJECT(v) && AS_OBJECT(v)->type == COLOR_T)
-#define VALUE_IS_STRING(v)          (IS_OBJECT(v) && AS_OBJECT(v)->type == STRING_T)
-#define VALUE_IS_FUNCTION(v)        (IS_OBJECT(v) && AS_OBJECT(v)->type == FUNCTION_T)
-#define VALUE_IS_NATIVE_FUNCTION(v) (IS_OBJECT(v) && AS_OBJECT(v)->type == NATIVE_FUNCTION_T)
-#define VALUE_IS_OPAQUE(v)          (IS_OBJECT(v) && AS_OBJECT(v)->type == OPAQUE_T)
-#define VALUE_IS_DATE(v)            (IS_OBJECT(v) && AS_OBJECT(v)->type == DATE_T)
-#define VALUE_IS_MONEY(v)           (IS_OBJECT(v) && AS_OBJECT(v)->type == MONEY_T)
-#define VALUE_IS_ARRAY(v)           (IS_OBJECT(v) && AS_OBJECT(v)->type == ARRAY_T)
-#define VALUE_IS_DICT(v)            (IS_OBJECT(v) && AS_OBJECT(v)->type == DICT_T)
-#define VALUE_IS_OBJECT(v)          (IS_OBJECT(v) && AS_OBJECT(v)->type == OBJECT_T)
-#define VALUE_IS_REGEXP(v)          (IS_OBJECT(v) && AS_OBJECT(v)->type == REGEXP_T)
+#define VALUE_IS_PTR(v)             (((INT)v & 0x03) == 0)
+#define VALUE_IS_INT(v)             (((INT)v & 0x01) == 0x01)
+#define VALUE_IS_BOOL(v)            ((((INT)v) & 0x06) == 0x06)
+#define VALUE_IS_SYMBOL(v)          ((((INTERN)v) & 0x0A) == 0x0A)
+#define VALUE_IS_FLOAT(v)           (IS_OBJECT(v) && OBJ_IS_FLOAT(v))
+#define VALUE_IS_COLOR(v)           (IS_OBJECT(v) && OBJ_IS_COLOR(v))
+#define VALUE_IS_STRING(v)          (IS_OBJECT(v) && OBJ_IS_STRING(v))
+#define VALUE_IS_FUNCTION(v)        (IS_OBJECT(v) && OBJ_IS_FUNCTION(v))
+#define VALUE_IS_NATIVE_FUNCTION(v) (IS_OBJECT(v) && OBJ_IS_NATIVE_FUNCTION(v))
+#define VALUE_IS_OPAQUE(v)          (IS_OBJECT(v) && OBJ_IS_OPAQUE(v))
+#define VALUE_IS_DATE(v)            (IS_OBJECT(v) && OBJ_IS_DATE(v))
+#define VALUE_IS_MONEY(v)           (IS_OBJECT(v) && OBJ_IS_MONEY(v))
+#define VALUE_IS_ARRAY(v)           (IS_OBJECT(v) && OBJ_IS_ARRAY(v))
+#define VALUE_IS_DICT(v)            (IS_OBJECT(v) && OBJ_IS_DICT(v))
+#define VALUE_IS_OBJECT(v)          (IS_OBJECT(v) && OBJ_IS_OBJECT(v))
+#define VALUE_IS_REGEXP(v)          (IS_OBJECT(v) && OBJ_IS_REGEXP(v))
 
-#define VALUE_IS_TRUTHY(v)          (((INT)(v)) != kNull && ((INT)(v)) != kFalse)
+#define VALUE_IS_TRUTHY(v)          ((v != kFalse) && (v != kNull))
 
 /*
  * Object types
@@ -126,6 +130,11 @@ typedef struct obj {
     gc_header_t     gc;
     obj_type_t      type;
 } obj_t;
+
+typedef struct obj_float {
+    obj_t       obj;
+    REAL        value;
+} obj_float_t;
 
 typedef struct obj_array {
     obj_t       obj;                /* header */
