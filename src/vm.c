@@ -17,6 +17,62 @@ static void *jump_table[OPCODE_MAX];
 #define LINE                current_line
 #define SET_LINE(l)         (current_line = l)
 
+#define BIN_OP(operator) \
+    VALUE l = POP(); \
+    VALUE r = POP(); \
+    if (VALUE_IS_INT(l)) { \
+        if (VALUE_IS_INT(r)) { \
+            INT lc = INTVAL(l); \
+            INT rc = INTVAL(r); \
+            INT res = lc operator rc; \
+            PUSH(MK_INTVAL(res)); \
+        } else if (VALUE_IS_FLOAT(r)) { \
+            REAL lc = (REAL) INTVAL(l); \
+            REAL rc = FLOATVAL(r); \
+            REAL res = lc operator rc; \
+            PUSH(MK_FLOATVAL(CONTEXT, res)); \
+        } else { \
+            /* TODO: error? or operator overload? */ \
+        } \
+    } else if (VALUE_IS_FLOAT(l)) { \
+        if (VALUE_IS_INT(r)) { \
+            REAL lc = FLOATVAL(l); \
+            REAL rc = (REAL) INTVAL(r); \
+            REAL res = lc operator rc; \
+            PUSH(MK_FLOATVAL(CONTEXT, res)); \
+        } else if (VALUE_IS_FLOAT(r)) { \
+            REAL lc = FLOATVAL(l); \
+            REAL rc = FLOATVAL(r); \
+            REAL res = lc operator rc; \
+            PUSH(MK_FLOATVAL(CONTEXT, res)); \
+        } \
+    } else { \
+        /* TODO: error? */ \
+    }
+    
+#define CMP_OP(operator) \
+    VALUE l = POP(); \
+    VALUE r = POP(); \
+    if (VALUE_IS_INT(l) && VALUE_IS_INT(r)) { \
+        INT lc = INTVAL(l); \
+        INT rc = INTVAL(r); \
+        if (lc operator rc) { PUSH(kTrue); } else { PUSH(kFalse); } \
+    } else if (VALUE_IS_INT(l) && VALUE_IS_FLOAT(r)) { \
+        REAL lc = (REAL) INTVAL(l); \
+        REAL rc = FLOATVAL(r); \
+        if (lc operator rc) { PUSH(kTrue); } else { PUSH(kFalse); } \
+    } else if (VALUE_IS_FLOAT(l) && VALUE_IS_INT(r)) { \
+        REAL lc = FLOATVAL(l); \
+        REAL rc = (REAL) INTVAL(r); \
+        if (lc operator rc) { PUSH(kTrue); } else { PUSH(kFalse); } \
+    } else if (VALUE_IS_FLOAT(l) && VALUE_IS_FLOAT(r)) { \
+        REAL lc = FLOATVAL(l); \
+        REAL rc = FLOATVAL(r); \
+        if (lc operator rc) { PUSH(kTrue); } else { PUSH(kFalse); } \
+    } else { \
+        /* TODO: error */ \
+    }
+    
 void vm_exec() {
     
     UINT        current_line        = 0;
@@ -36,37 +92,27 @@ void vm_exec() {
     {
         NEXT();
     }
+    LBL_CALL:
+    {
+        VALUE function = POP();
+        if (IS_OBJECT(function)) {
+            if (OBJ_IS_NATIVE_FUNCTION(function)) {
+                
+            } else if (OBJ_IS_FUNCTION(function)) {
+                
+            }
+        }
+        NEXT();
+    }
     LBL_RETURN:
     {
         NEXT();
     }
-    LBL_PUSH:
-    {
-        VALUE v = TAKE_VALUE();
-        PUSH(v);
-        NEXT();
-    }
-    LBL_PUSH_TRUE:
-    {
-        PUSH(kTrue);
-        NEXT();
-    }
-    LBL_PUSH_FALSE:
-    {
-        PUSH(kFalse);
-        NEXT();
-    }
-    LBL_PUSH_NULL:
-    {
-        PUSH(kNull);
-        NEXT();
-    }
-    LBL_PUSH_LOCAL:
-    {
-        UINT ix = TAKE_UINT();
-        PUSH(GET_LOCAL(ix));
-        NEXT();
-    }
+    LBL_PUSH:           { VALUE v = TAKE_VALUE(); PUSH(v); NEXT(); }
+    LBL_PUSH_TRUE:      { PUSH(kTrue); NEXT(); }
+    LBL_PUSH_FALSE:     { PUSH(kFalse); NEXT(); }
+    LBL_PUSH_NULL:      { PUSH(kNull); NEXT(); }
+    LBL_PUSH_LOCAL:     { UINT ix = TAKE_UINT(); PUSH(GET_LOCAL(ix)); NEXT(); }
     LBL_PUSH_GLOBAL:
     {
         NEXT();
@@ -84,13 +130,13 @@ void vm_exec() {
     }
     LBL_JMP:
     {
-        UINT delta = TAKE_INT();
+        INT delta = TAKE_INT();
         inst_ptr += delta;
         NEXT();
     }
     LBL_JMP_IF_TRUE:
     {
-        UINT delta = TAKE_INT();
+        INT delta = TAKE_INT();
         VALUE cond = POP();
         if (VALUE_IS_TRUTHY(cond)) {
             inst_ptr += delta;
@@ -99,67 +145,69 @@ void vm_exec() {
     }
     LBL_JMP_IF_FALSE:
     {
-        UINT delta = TAKE_INT();
+        INT delta = TAKE_INT();
         VALUE cond = POP();
         if (!VALUE_IS_TRUTHY(cond)) {
             inst_ptr += delta;
         }
         NEXT();
     }
-    LBL_ADD:
-    {
-        VALUE l = POP();
-        VALUE r = POP();
-        if (VALUE_IS_INT(l)) {
-            if (VALUE_IS_INT(r)) {
-                PUSH(MK_INTVAL(INTVAL(l) + INTVAL(r)));
-            } else if (VALUE_IS_FLOAT(r)) {
-                // TODO
-            } else {
-                // TODO
-            }
-        } else if (VALUE_IS_FLOAT(l)) {
-            
-        } else {
-            
-        }
-        NEXT();
-    }
-    LBL_SUB:
-    {
-        NEXT();
-    }
-    LBL_MUL:
-    {
-        NEXT();
-    }
-    LBL_DIV:
-    {
-        NEXT();
-    }
-    LBL_GT:
-    {
-        NEXT();
-    }
-    LBL_GTE:
-    {
-        NEXT();
-    }
-    LBL_LT:
-    {
-        NEXT();
-    }
-    LBL_LTE:
-    {
-        NEXT();
-    }
+    LBL_ADD:    { BIN_OP(+);  NEXT(); }
+    LBL_SUB:    { BIN_OP(-);  NEXT(); }
+    LBL_MUL:    { BIN_OP(*);  NEXT(); }
+    LBL_DIV:    { BIN_OP(/);  NEXT(); }
+    LBL_GT:     { CMP_OP(>);  NEXT(); }
+    LBL_GTE:    { CMP_OP(>=); NEXT(); }
+    LBL_LT:     { CMP_OP(<);  NEXT(); }
+    LBL_LTE:    { CMP_OP(<=); NEXT(); }
     LBL_EQ:
     {
+        /* Needs work */
+        
+        VALUE l = POP();
+        VALUE r = POP();
+        
+        if (l == r) {
+            /* covers: ints, objects, symbols, true, false, nil */
+            PUSH(kTrue);
+        } else if (VALUE_IS_INT(l) && VALUE_IS_FLOAT(r)) {
+            REAL lc     = (REAL) INTVAL(l);
+            REAL rc     = FLOATVAL(r);
+            VALUE res   = (lc == rc) ? kTrue : kFalse;
+            PUSH(res);
+        } else if (VALUE_IS_FLOAT(l) && VALUE_IS_INT(r)) {
+            REAL lc     = FLOATVAL(l);
+            REAL rc     = (REAL) INTVAL(r);
+            VALUE res   = (lc == rc) ? kTrue : kFalse;
+            PUSH(res);
+        } else {
+            PUSH(kFalse);
+        }
+        
         NEXT();
     }
     LBL_NEQ:
     {
-        NEXT();
+        /* Again, needs work */
+        
+        VALUE l = POP();
+        VALUE r = POP();
+        
+        if (l == r) {
+            PUSH(kFalse);
+        } else if (VALUE_IS_INT(l) && VALUE_IS_FLOAT(r)) {
+            REAL lc     = (REAL) INTVAL(l);
+            REAL rc     = FLOATVAL(r);
+            VALUE res   = (lc != rc) ? kTrue : kFalse;
+            PUSH(res);
+        } else if (VALUE_IS_FLOAT(l) && VALUE_IS_INT(r)) {
+            REAL lc     = FLOATVAL(l);
+            REAL rc     = (REAL) INTVAL(r);
+            VALUE res   = (lc != rc) ? kTrue : kFalse;
+            PUSH(res);
+        } else {
+            PUSH(kTrue);
+        }
     }
     LBL_INDEX:
     {
