@@ -8,7 +8,7 @@ obj_array_t*    array_create_with_capacity(context_t *ctx, UINT capacity);
 
 void            array_destroy(context_t *ctx, obj_array_t *ary);
 
-UINT            array_get_size(context_t *ctx, obj_array_t *ary);
+UINT            array_get_length(context_t *ctx, obj_array_t *ary);
 VALUE           array_get_index(context_t *ctx, obj_array_t *ary, UINT ix);
 void            array_set_index(context_t *ctx, obj_array_t *ary, UINT ix, VALUE v);
 
