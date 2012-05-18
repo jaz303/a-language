@@ -1,0 +1,77 @@
+typedef struct {
+    ast_node_type_t     type;
+    void                *annotation;
+} ast_node_t;
+
+typedef struct {
+    ast_node_type_t     type;
+    void                *annotation;
+} ast_annotated_node_t;
+
+typedef struct {
+    ast_node_type_t     type;
+    token_t             operator;
+    ast_node_t          *expression;
+} ast_unary_expression_t;
+
+typedef struct {
+    ast_node_type_t     type;
+    ast_node_t          *left;
+    token_t             operator;
+    ast_node_t          *right;
+} ast_binary_expression_t;
+
+typedef struct {
+    ast_annotated_node_t    header;
+    ast_expression_t        *expression;
+    ast_statements_t        *body;
+} ast_while_t;
+
+typedef struct ast_statements ast_statements_t;
+struct ast_statements {
+    ast_node_t          *statement;
+    ast_statements_t    *next;
+}
+
+typedef struct ast_conditions ast_conditions_t;
+struct ast_conditions {
+    ast_expression_t        *expression;
+    ast_statements_t        *body;
+    ast_conditions_t        *next;
+}
+
+typedef struct ast_parameters ast_parameters_t;
+struct ast_parameters {
+    IDENT                   name;
+    VALUE                   default_value;
+    ast_parameters_t        *next;
+};
+
+typedef struct ast_function {
+    IDENT                   name;
+    int                     arity;
+    ast_parameters_t        *parameters;
+    ast_statements_t        *body;
+} ast_function_t;
+
+Hash tables required:
+
+// tidy up gen_hash API, make it iterable
+
+
+// maps text to interned ID
+// insert only
+string -> intern
+
+// main symbol table
+// used to map interned strings to their values
+// can be used for declared functions etc
+// insert only, i think...
+// hash code is == intern
+// comparison is ==
+intern -> VALUE
+
+// dictionary/hash table
+// hash code will be worked out by value_compute_hash_code()
+// keys compared using value_is_equal()
+VALUE -> VALUE
