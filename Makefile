@@ -7,6 +7,7 @@ LDFLAGS		=
 
 BUILD_DIR	=	build
 SCANNER		=	src/scanner.c
+PARSER		=	src/parser.c
 
 OBJECTS		=	src/ast.o \
 				src/debug.o \
@@ -42,6 +43,7 @@ build/menace: all build
 clean:
 	find . -name '*.o' -delete
 	rm -f $(SCANNER)
+	rm -f $(PARSER)
 	rm -rf $(BUILD_DIR)
 
 # Tests
