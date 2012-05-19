@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include <stdint.h>
 
+/*
+ * Forward declarations
+ */
+
+typedef struct context context_t;
+
 /* define this to pack floats/colors/dates into VALUE types (64-bit only) */
 /* (TODO!!!) */
 // #define USE_MOAR_PACKING
@@ -46,17 +52,6 @@ typedef enum {
 #endif
 
 typedef float REAL;
-
-/*
- * VM instruction type
- */
- 
-typedef union {
-    INT     o;      /* opcode */
-    INT     i;      /* integer operand */
-    UINT    u;      /* unsigned integer operand */
-    VALUE   v;      /* value operand */
-} inst_t;
 
 /*
  * 000000 - ptr
@@ -119,6 +114,17 @@ typedef union {
 #define VALUE_IS_TRUTHY(v)          ((v != kFalse) && (v != kNull))
 
 /*
+ * VM instruction type
+ */
+ 
+typedef union {
+    INT     o;      /* opcode */
+    INT     i;      /* integer operand */
+    UINT    u;      /* unsigned integer operand */
+    VALUE   v;      /* value operand */
+} inst_t;
+
+/*
  * Object types
  */
  
@@ -159,6 +165,56 @@ typedef int32_t INTEGER;
 typedef uint32_t COLOR;
 
 /*
+ * Hash table
+ */
+ 
+#ifdef _LP64
+    typedef uint64_t    hash_int_t;
+#else
+    typedef uint32_t    hash_int_t;
+#endif
+
+typedef hash_int_t hash_iter_t;
+ 
+typedef union {
+    VALUE           value;
+    INTERN          symbol;
+    const char*     string;
+} hash_key_t;
+
+typedef union {
+    VALUE           value;
+    INTERN          symbol;
+} hash_value_t;
+
+typedef struct hash_node hash_node_t;
+struct hash_node {
+    hash_key_t      key;
+    hash_value_t    value;
+};
+
+typedef enum {
+    HASH_SYMBOL_TABLE,                      /* INTERN => VALUE */
+    HASH_INTERN_TABLE,                      /* cstring => INTERN */
+    HASH_DICT                               /* VALUE => VALUE */
+} hash_type_t;
+
+typedef struct {
+    hash_type_t         type;               /* type of hash table */
+    hash_int_t          n_buckets;          /* # of buckets allocated */
+    hash_int_t          n_occupied;         /* # of occupied buckets (i.e. full or deleted) */
+    hash_int_t          upper_bound;        /* threshold of occupied buckets at which we will resize */
+    hash_int_t          size;               /* # of K/V pairs in the hash (i.e. full buckets) */
+    unsigned char       *flags;             /* auxiliary packed flag array for tracking bucket states */
+    hash_node_t         *buckets;           /* the buckets */
+    void                *userdata;          /* custom userdata. mainly useful for passing context into user-defined memory mgmt functions */
+} hash_t;
+
+typedef hash_t symbol_table_t;
+typedef hash_t intern_table_t;
+typedef hash_t dict_t;
+    
+/*
  * Token types
  */
 
@@ -176,20 +232,6 @@ extern const char const *token_names[];
  * AST structures and macros
  */
 
-typedef uint32_t ast_id_t;
-
-#define AST_IS_CELL(ix)         ((ix & 0x80000000) == 0x80000000)
-#define AST_IS_VALUE(ix)        ((ix & 0x80000000) == 0)
-#define AST_MAKE_CELL(ix)       (ix | 0x80000000)
-#define AST_MAKE_VALUE(ix)      (ix)
-#define AST_INDEX(ix)           (ix & 0x7fffffff)
-#define AST_GET_VALUE(ctx, v)   (ctx->ast_pool->values[AST_INDEX(v)])
-
-typedef struct {
-    ast_id_t car;   /* either a cell or a value */
-    ast_id_t cdr;   /* either a cell or 0/nil */
-} ast_cell_t;
-
 enum {
     AST_ALPHA   = 0,
     AST_RED     = 1,
@@ -197,48 +239,137 @@ enum {
     AST_BLUE    = 3
 };
 
-typedef union {
-    enum {
-        AST_LITERAL_NULL,
-        AST_LITERAL_INT,
-        AST_LITERAL_BOOL,
-        AST_LITERAL_STRING,
-        AST_LITERAL_COLOR,
-        AST_LITERAL_IDENT,
-        AST_LITERAL_SYMBOL,
-        AST_STATEMENTS,
-        AST_WHILE,
-        AST_IF,
-        AST_PASS,
-        AST_PARAMETER_LIST,
-        AST_BINARY_OP,
-        AST_UNARY_OP,
-    }               node_type;
-    INT             val_int;
-    unsigned char   val_color[4];
-    char            *val_string;
-} ast_value_t;
+typedef struct {
+} ast_pool_t;
+
+typedef enum {
+    AST_LITERAL_NULL,
+    AST_LITERAL_INT,
+    AST_LITERAL_BOOL,
+    AST_LITERAL_STRING,
+    AST_LITERAL_COLOR,
+    AST_LITERAL_IDENT,
+    AST_LITERAL_SYMBOL,
+    AST_LITERAL_ARRAY,
+    AST_LITERAL_DICT,
+    AST_STATEMENTS,
+    AST_WHILE,
+    AST_IF,
+    AST_PASS,
+    AST_PARAMETER_LIST,
+    AST_BINARY_OP,
+    AST_UNARY_OP
+} ast_node_type_t;
 
 #define AST_LITERAL_MAX AST_LITERAL_SYMBOL
 
-typedef struct {
-    ast_id_t        num_cells;
-    ast_cell_t      *cells;
-    ast_id_t        *free_cells;
-    ast_id_t        next_free_cell_ix;
-    ast_id_t        num_values;
-    ast_value_t     *values;
-    ast_id_t        *free_values;
-    ast_id_t        next_free_value_ix;
-} ast_pool_t;
+/* Forward declarations */
+
+typedef struct ast_node                     ast_node_t;
+typedef struct ast_statements               ast_statements_t;
+typedef struct ast_conditions               ast_conditions_t;
+typedef struct ast_parameters               ast_parameters_t;
+typedef struct ast_array_members            ast_array_members_t;
+typedef struct ast_dict_members             ast_dict_members_t;
+typedef struct ast_literal                  ast_literal_t;
+typedef struct ast_literal_collection       ast_literal_collection_t;
+typedef struct ast_unary_expression         ast_unary_expression_t;
+typedef struct ast_binary_expression        ast_binary_expression_t;
+typedef struct ast_while                    ast_while_t;
+typedef struct ast_if                       ast_if_t;
+typedef struct ast_pass                     ast_pass_t;
+typedef struct ast_function                 ast_function_t;
+
+/* AST support types */
+
+struct ast_node {
+    ast_node_type_t         type;
+};
+
+struct ast_statements {
+    ast_node_t              *statement;
+    ast_statements_t        *next;
+};
+
+struct ast_conditions {
+    ast_node_t              *expression;
+    ast_statements_t        *body;
+    ast_conditions_t        *next;
+};
+
+struct ast_parameters {
+    INTERN                  name;
+    VALUE                   default_value;
+    ast_parameters_t        *next;
+};
+
+struct ast_array_members {
+    ast_node_t              *value;
+    ast_array_members_t     *next;
+};
+
+struct ast_dict_members {
+    ast_node_t              *key;
+    ast_node_t              *value;
+    ast_dict_members_t      *next;
+};
+
+/* AST expression types */
+
+struct ast_literal {
+    ast_node_type_t         type;
+    /* dunno */
+};
+
+struct ast_literal_collection {
+    ast_node_type_t         type;
+    ast_node_t              *members;
+};
+
+struct ast_unary_expression {
+    ast_node_type_t         type;
+    token_t                 operator;
+    ast_node_t              *expression;
+};
+
+struct ast_binary_expression {
+    ast_node_type_t         type;
+    ast_node_t              *left;
+    token_t                 operator;
+    ast_node_t              *right;
+};
+
+/* AST statement types */
+
+struct ast_while {
+    ast_node_type_t         type;
+    ast_node_t              *condition;
+    ast_statements_t        *body;
+};
+
+struct ast_if {
+    ast_node_type_t         type;
+    ast_conditions_t        *conditions;
+};
+
+struct ast_pass {
+    ast_node_type_t         type;
+};
+
+struct ast_function {
+    INTERN                  name;
+    int                     arity;
+    ast_parameters_t        *parameters;
+    ast_statements_t        *body;
+};
 
 /* 
  * Main context object
  */
 
-typedef struct {
+struct context {
     ast_pool_t      ast_pool;
-} context_t;
+};
 
 /*
  * Scanner; defined as void because it's declared in scanner.c and can
@@ -247,6 +378,7 @@ typedef struct {
 
 typedef void scanner_t;
 typedef void parser_t;
+
 
 /*
  * VM Opcodes & State
@@ -260,6 +392,10 @@ typedef enum {
 
 #define OPCODE_MAX OP_HALT
 
+/*
+ * VM State
+ */
+
 typedef struct {
     
 } vm_t;
@@ -268,18 +404,14 @@ typedef struct {
  * Utility Functions
  */
  
-int context_init(context_t *ctx);
-const char *token_get_name(token_t);
-UINT roundup2(UINT v);
-
-/* terminates */
-void fatal_error(const char *msg) __attribute__ ((noreturn));
-
-/* terminates */
-void memory_error() __attribute__ ((noreturn));
+int             context_init(context_t *ctx);
+const char*     token_get_name(token_t);
+UINT            roundup2(UINT v);
+void            fatal_error(const char *msg) __attribute__ ((noreturn));    /* terminates */
+void            memory_error() __attribute__ ((noreturn));                  /* terminates */
 
 /*
- *
+ * Sanity check; all fundamental types should be the same size
  */
  
 #define CASSERT(ix, expn) typedef char __C_ASSERT_##ix##__[(expn)?1:-1] 
@@ -288,5 +420,7 @@ CASSERT(1, sizeof(VALUE) == sizeof(INT));
 CASSERT(2, sizeof(VALUE) == sizeof(UINT));
 CASSERT(3, sizeof(VALUE) == sizeof(INTERN));
 CASSERT(4, sizeof(VALUE) == sizeof(inst_t));
+CASSERT(5, sizeof(VALUE) == sizeof(hash_key_t));
+CASSERT(6, sizeof(VALUE) == sizeof(hash_value_t));
 
 #endif
