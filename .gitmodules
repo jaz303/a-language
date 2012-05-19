@@ -1,3 +1,0 @@
-[submodule "vendor/jazlib"]
-	path = vendor/jazlib
-	url = git@github.com:jaz303/jazlib.git
