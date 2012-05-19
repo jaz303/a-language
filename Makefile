@@ -1,5 +1,5 @@
 CC			= gcc
-CFLAGS		= -Iinclude -Wall --std=c99 -fnested-functions
+CFLAGS		= -Iinclude -Wall --std=c99 
 LDFLAGS		=
 
 %.o: %.c
