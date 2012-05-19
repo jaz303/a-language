@@ -12,6 +12,7 @@ PARSER		=	src/parser.c
 OBJECTS		=	src/ast.o \
 				src/debug.o \
 				src/global.o \
+				src/hash.o \
 				src/parser.o \
 				src/scanner.o \
 				src/token_names.o
