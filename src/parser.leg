@@ -45,25 +45,48 @@ Else_Part               = ELSE Block_Prelude Statement_Block
 
 While_Statement         = WHILE - Expression Block_Prelude Statement_Block
 Pass_Statement          = PASS - EOL
-Assign_Statement        = IDENT - OP_ASSIGN - Expression - EOL
+Assign_Statement        = Expression - OP_ASSIGN - Expression - EOL
 Expression_Statement    = Expression - EOL
 Return_Statement        = RETURN - Expression? EOL
 
-Named_Function_Def      = DEF - IDENT L_PAREN - Parameter_List - R_PAREN
+Named_Function_Def      = DEF - IDENT - Parameter_List?
                           Block_Prelude
                           Statement_Block
                           
-Parameter_List          = Parameters?
+Parameter_List          = L_PAREN - Parameters? - R_PAREN
 Parameters              = IDENT - (COMMA - Parameters)?
 
 Expression              = Exp1
-Exp1                    = Exp2 ((OP_PLUS | OP_MINUS) - Exp2)*   -
-Exp2                    = Exp3 ((OP_TIMES | OP_DIV) - Exp3)*    -
-Exp3                    = Value                                 -
-                        | Function_Call                         -
-                        | IDENT                                 -
-                        | L_PAREN - Expression - R_PAREN        -
-                        
+
+# conditional expression here
+# assignment operator expression here
+Exp1                    = Exp1_5 (OP_OR - Exp1_5)*                              -
+Exp1_5                  = Exp2 (OP_AND - Exp2)*                                 -
+Exp2                    = Exp3 ((OP_B_AND | OP_B_OR | OP_B_XOR) - Exp3)*        -
+Exp3                    = Exp4 ((OP_EQ | OP_NEQ) - Exp4)*                       -
+Exp4                    = Exp5 ((OP_LT | OP_LTE | OP_GT | OP_GTE) - Exp5)*      -
+# shift operators here
+Exp5                    = Exp6 ((OP_PLUS | OP_MINUS) - Exp6)*                   -
+Exp6                    = Exp7 ((OP_TIMES | OP_DIV | OP_MOD | OP_POW) - Exp7)*  -
+
+Exp7                    = OP_PLUS Exp7                                          -
+                        | OP_MINUS Exp7                                         -
+                        | Exp8
+
+Exp8                    = OP_B_NOT Exp7                                         -
+                        | BANG Exp7                                             -
+                        | Primary Selector*                                     -
+
+# !! constructor should be a case here, if constructor is to be special
+# NOTE: Primary does not consume trailing space (to ensure Selector
+# follows immediately)
+Primary                 = L_PAREN - Expression - R_PAREN
+                        | IDENT
+                        | Value
+
+Selector                = DOT IDENT Arguments?
+                        | L_BRACKET Expression_List R_BRACKET
+
 Value                   = INTEGER
                         | STRING
                         | SYMBOL
@@ -71,17 +94,17 @@ Value                   = INTEGER
                         | FALSE
                         | Array
                         | Dict
-                        
-Function_Call           = IDENT L_PAREN - Function_Args? - R_PAREN
-Function_Args           = Expression (COMMA - Function_Args)?
-                        
+
 Array                   = L_BRACKET - Array_Elements? - R_BRACKET
 Array_Elements          = Expression (COMMA - Array_Elements)?
                         
 Dict                    = L_BRACE - Dict_Elements? - R_BRACE
 Dict_Elements           = Dict_Pair (COMMA - Dict_Pair)?
 Dict_Pair               = Expression HASHROCKET - Expression
-                        
+ 
+Expression_List         = Expression (COMMA - Expression)*      -
+Arguments               = L_PAREN - Expression_List? - R_PAREN                  -
+
 Block_Prelude           = - COLON - EOL
 -                       = WHITESPACE*
 
