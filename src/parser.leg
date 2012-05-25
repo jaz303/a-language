@@ -13,7 +13,7 @@
 }
 
 #define YY_CTX_LOCAL
-#define YYSTYPE             ast_id_t
+#define YYSTYPE             ast_node_t*
 #define YY_PARSE(T)         static T
 
 #define YY_CTX_MEMBERS                  \
@@ -22,91 +22,222 @@
     const char          *token_text;    \
     int                 token_len;      \
     char                *error;
+    
+#define AST_MAKE(type, ...) ast_mk_##type(yyctx->context, ##__VA_ARGS__)
+#define BIN_EXP(operator)   $$ = ast_mk_bin_exp(yyctx->context, operator, $$, r)
+#define CTX                 yyctx->context
+#define TEXT                yyctx->token_text
 %}
 
 # Points to consider:
 # Assignment should probably be an expression
 # Function_Args should always be visited, even if empty (so we get AST node)
 
-Statement_Block         = INDENT EOL* (Statement EOL*)+ OUTDENT
+Statement_Block         = INDENT EOL* stmts:Statements OUTDENT      { $$ = stmts }
+Statements              = stmt:Statement EOL+ cons:Statements?      { $$ = AST_MAKE(statements, stmt, cons); }
+Statement               = if_stmt:If_Statement                      { $$ = if_stmt }
+                        | while_stmt:While_Statement                { $$ = while_stmt }
+                        | pass_stmt:Pass_Statement                  { $$ = pass_stmt }
+                        | assign_stmt:Assign_Statement              { $$ = assign_stmt }
+                        | expr_stmt:Expression_Statement            { $$ = expr_stmt }
+                        | return_stmt:Return_Statement              { $$ = return_stmt }
+                        | named_fn_stmt:Named_Function_Def          { $$ = named_fn_stmt }
 
-Statement               = If_Statement
-                        | While_Statement
-                        | Pass_Statement
-                        | Assign_Statement
-                        | Expression_Statement
-                        | Return_Statement
-                        | Named_Function_Def
-                    
-If_Statement            = If_Part Elseif_Part* Else_Part?
-If_Part                 = IF - Expression Block_Prelude Statement_Block
-Elseif_Part             = ELSEIF - Expression Block_Prelude Statement_Block
-Else_Part               = ELSE Block_Prelude Statement_Block
+#
+# If/elseif/else statement
 
-While_Statement         = WHILE - Expression Block_Prelude Statement_Block
+If_Statement            = cond:If_Part cons:If_Cons?
+                        { $$ = AST_MAKE(if, ast_cons_cond(cond, cons)) }
+
+If_Part                 = IF - exp:Expression Block_Prelude body:Statement_Block
+                        { $$ = AST_MAKE(condition, exp, body) }
+                        
+If_Cons                 = cond:Elseif_Part cons:If_Cons?    { $$ = ast_cons_cond(cond, cons) }
+                        | cond:Else_Part                    { $$ = cond }
+                        
+Elseif_Part             = ELSEIF - exp:Expression Block_Prelude body:Statement_Block
+                        { $$ = AST_MAKE(condition, exp, body) }
+
+Else_Part               = ELSE Block_Prelude body:Statement_Block
+                        { $$ = AST_MAKE(condition, NULL, body) }
+
+#
+# While statement
+
+While_Statement         = WHILE - exp:Expression Block_Prelude body:Statement_Block
+                        { $$ = AST_MAKE(while, exp, body) }
+
+#
+# Pass statement
+
 Pass_Statement          = PASS - EOL
-Assign_Statement        = Expression - OP_ASSIGN - Expression - EOL
-Expression_Statement    = Expression - EOL
-Return_Statement        = RETURN - Expression? EOL
+                        { $$ = AST_MAKE(pass) }
 
-Named_Function_Def      = DEF - IDENT - Parameter_List?
-                          Block_Prelude
-                          Statement_Block
+#
+# Assignment statement
+
+Assign_Statement        = target:Expression - EQUALS - value:Expression - EOL
+                        { $$ = AST_MAKE(assign, target, value) }
+
+#
+# Expression statement
+
+Expression_Statement    = exp:Expression - EOL
+                        { $$ = exp }
+
+#
+# Return statement
+
+Return_Statement        = RETURN - EOL                      { $$ = AST_MAKE(return, NULL) }
+                        | RETURN - exp:Expression EOL       { $$ = AST_MAKE(return, exp) }
+                        
+#
+# Function definition
+
+Named_Function_Def      = DEF - name:IDENT - params:Parameter_List? Block_Prelude body:Statement_Block
+                        { $$ = AST_MAKE(named_function,
+                                        CTX,
+                                        string_to_intern(ctx->context, ctx->token_text),
+                                        params,
+                                        body) }
                           
-Parameter_List          = L_PAREN - Parameters? - R_PAREN
-Parameters              = IDENT - (COMMA - Parameters)?
+Parameter_List          = empty:Empty_Parameters                    { $$ = empty }
+                        | non_empty:Non_Empty_Parameters            { $$ = non_empty }
 
-Expression              = Exp1
+Empty_Parameters        = L_PAREN - R_PAREN                         { $$ = NULL }
+Non_Empty_Parameters    = L_PAREN - params:Parameters - R_PAREN     { $$ = params }
+Parameters              = id:IDENT - (COMMA - cons:Parameters)?     { $$ = AST_MAKE(parameters, id, cons) }
+
+#
+# Expressions
+
+Expression              = exp:Exp1                          { $$ = exp }
 
 # conditional expression here
-# assignment operator expression here
-Exp1                    = Exp1_5 (OP_OR - Exp1_5)*                              -
-Exp1_5                  = Exp2 (OP_AND - Exp2)*                                 -
-Exp2                    = Exp3 ((OP_B_AND | OP_B_OR | OP_B_XOR) - Exp3)*        -
-Exp3                    = Exp4 ((OP_EQ | OP_NEQ) - Exp4)*                       -
-Exp4                    = Exp5 ((OP_LT | OP_LTE | OP_GT | OP_GTE) - Exp5)*      -
+
+Exp1                    = l:Exp2                            { $$ = l }
+                            (       L_OR - r:Exp2           { $$ = BIN_EXP(T_L_OR) }
+                            ) * -
+
+Exp2                    = l:Exp3                            { $$ = l }
+                            (       L_AND - r:Exp3          { $$ = BIN_EXP(T_L_AND) }
+                            ) * -
+
+Exp3                    = l:Exp4                            { $$ = l }
+                            (       (B_AND - r:Exp4)        { $$ = BIN_EXP(T_B_AND) }
+                                |   (B_OR  - r:Exp4)        { $$ = BIN_EXP(T_B_OR) }
+                                |   (B_XOR - r:Exp4)        { $$ = BIN_EXP(T_B_XOR) }
+                            ) * -
+                            
+Exp4                    = l:Exp5                            { $$ = l }
+                            (       (EQ  - r:Exp5)          { $$ = BIN_EXP(T_EQ) }
+                                |   (NEQ - r:Exp5)          { $$ = BIN_EXP(T_NEQ) }
+                            ) * -
+                            
+Exp5                    = l:Exp6
+                            (
+                                    (LT  - r:Exp6)          { $$ = BIN_EXP(T_LT) }
+                                |   (LTE - r:Exp6)          { $$ = BIN_EXP(T_LTE) }
+                                |   (GT  - r:Exp6)          { $$ = BIN_EXP(T_GT) }
+                                |   (GTE - r:Exp6)          { $$ = BIN_EXP(T_GTE) }
+                            ) * -
+                            
 # shift operators here
-Exp5                    = Exp6 ((OP_PLUS | OP_MINUS) - Exp6)*                   -
-Exp6                    = Exp7 ((OP_TIMES | OP_DIV | OP_MOD | OP_POW) - Exp7)*  -
 
-Exp7                    = OP_PLUS Exp7                                          -
-                        | OP_MINUS Exp7                                         -
-                        | Exp8
+Exp6                    = l:Exp7
+                            (
+                                    (PLUS  - r:Exp7)        { $$ = BIN_EXP(T_PLUS) }
+                                |   (MINUS - r:Exp7)        { $$ = BIN_EXP(T_MINUS) }
+                            ) * -
+                            
+Exp7                    = l:Exp8
+                            (
+                                    (TIMES - r:Exp8)        { $$ = BIN_EXP(T_TIMES) }
+                                |   (DIV   - r:Exp8)        { $$ = BIN_EXP(T_DIV) }
+                                |   (MOD   - r:Exp8)        { $$ = BIN_EXP(T_MOD) }
+                                |   (POW   - r:Exp8)        { $$ = BIN_EXP(T_POW) }
+                            ) * -
 
-Exp8                    = OP_B_NOT Exp7                                         -
-                        | BANG Exp7                                             -
-                        | Primary Selector*                                     -
+Exp8                    = PLUS exp:Exp7             -       { $$ = AST_MAKE(unary_exp, T_PLUS, exp) }
+                        | MINUS exp:Exp7            -       { $$ = AST_MAKE(unary_exp, T_MINUS, exp) }
+                        | exp:Exp9                  -       { $$ = exp }
+                                                    
+Exp9                    = B_NOT exp:Exp9            -       { $$ = AST_MAKE(unary_exp, T_B_NOT, exp) }
+                        | L_NOT exp:Exp9            -       { $$ = AST_MAKE(unary_exp, T_L_NOT, exp) }
+                        | exp:Primary Selector*     -       { $$ = exp }
 
 # !! constructor should be a case here, if constructor is to be special
 # NOTE: Primary does not consume trailing space (to ensure Selector
 # follows immediately)
-Primary                 = L_PAREN - Expression - R_PAREN
-                        | IDENT
-                        | Value
+Primary                 = L_PAREN - exp:Expression - R_PAREN        { $$ = exp }
+                        | IDENT                                     { $$ = AST_MAKE(ident, string_to_ident(CTX, TEXT)) }
+                        | val:Value                                 { $$ = val }
 
 Selector                = DOT IDENT Arguments?
                         | L_BRACKET Expression_List R_BRACKET
 
-Value                   = INTEGER
-                        | STRING
-                        | SYMBOL
-                        | TRUE
-                        | FALSE
-                        | Array
-                        | Dict
+Value                   = INTEGER           { $$ = AST_MAKE(integer, decode_integer(TEXT)) }
+                        | STRING            { $$ = AST_MAKE(string, decode_string(TEXT)) }
+                        | SYMBOL            { $$ = AST_MAKE(symbol, TEXT) }
+                        | TRUE              { $$ = AST_MAKE(true) }
+                        | FALSE             { $$ = AST_MAKE(false) }
+                        | array:Array       { $$ = array }
+                        | dict:Dict         { $$ = dict }
 
-Array                   = L_BRACKET - Array_Elements? - R_BRACKET
-Array_Elements          = Expression (COMMA - Array_Elements)?
-                        
-Dict                    = L_BRACE - Dict_Elements? - R_BRACE
-Dict_Elements           = Dict_Pair (COMMA - Dict_Pair)?
-Dict_Pair               = Expression HASHROCKET - Expression
+#
+# Array literal
+
+Array                   = empty:Empty_Array                                 { $$ = empty }
+                        | non_empty:Array_With_Elements                     { $$ = non_empty }
+
+Empty_Array             = L_BRACKET - R_BRACKET                             { $$ = AST_MAKE(empty_array) }
+Array_With_Elements     = L_BRACKET - els:Array_Elements - R_BRACKET        { $$ = AST_MAKE(array, els) }
+Array_Elements          = exp:Expression (COMMA - cons:Array_Elements)?     { $$ = AST_MAKE(array_members, exp, cons); }
+
+#
+# Dictionary Literal
+
+Dict                    = empty:Empty_Dict                      { $$ = empty }
+                        | non_empty:Dict_With_Elements          { $$ = non_empty }
+
+Empty_Dict              = L_BRACE - R_BRACE
+                        { $$ = AST_MAKE(empty_dictionary) }
+
+Dict_With_Elements      = L_BRACE - els:Dict_Elements - R_BRACE
+                        { $$ = AST_MAKE(dict, els) }
+
+Dict_Elements           = key:Expression - HASHROCKET - value:Expression - (COMMA - cons:Dict_Elements)?
+                        { $$ = AST_MAKE(dict_members, key, value, cons) }
+
+#
+# Expression list/arguments
  
-Expression_List         = Expression (COMMA - Expression)*      -
-Arguments               = L_PAREN - Expression_List? - R_PAREN                  -
+Expression_List         = expr:Expression (COMMA - cons:Expression_List)? -
+                        { $$ = AST_MAKE(expressions, expr, cons) }
+
+Arguments               = empty:Empty_Arguments 
+                        | non_empty:Non_Empty_Arguments
+                        
+Empty_Arguments         = L_PAREN - R_PAREN
+                        { $$ = NULL }
+                        
+Non_Empty_Arguments     = L_PAREN - expr:Expression_List - R_PAREN
+                        { $$ = expr }
+
+#
+# Helpers
 
 Block_Prelude           = - COLON - EOL
 -                       = WHITESPACE*
+
+B_AND                   = AMPERSAND
+B_OR                    = PIPE
+B_NOT                   = TILDE
+B_XOR                   = HAT
+
+L_AND                   = DBL_AMPERSAND | AND
+L_OR                    = DBL_PIPE | OR
+L_NOT                   = BANG | NOT
 
 # This stuff is auto-generated from tokens.x by `rake parser_tokens`
 # BEGIN-TOKENS
@@ -114,43 +245,54 @@ INTEGER = [\001]
 STRING = [\002]
 IDENT = [\003]
 SYMBOL = [\004]
-TRUE = [\005]
-FALSE = [\006]
-DEF = [\007]
-WHILE = [\010]
-IF = [\011]
-ELSEIF = [\012]
-ELSE = [\013]
+DEF = [\005]
+WHILE = [\006]
+IF = [\007]
+ELSEIF = [\010]
+ELSE = [\011]
+TRUE = [\012]
+FALSE = [\013]
 PASS = [\014]
 RETURN = [\015]
-OP_PLUS = [\016]
-OP_MINUS = [\017]
-OP_TIMES = [\020]
-OP_DIV = [\021]
-OP_POW = [\022]
-OP_EQ = [\023]
-OP_NEQ = [\024]
-OP_LT = [\025]
-OP_LTE = [\026]
-OP_GT = [\027]
-OP_GTE = [\030]
-OP_ASSIGN = [\031]
-HASHROCKET = [\032]
-COLON = [\033]
-COMMA = [\034]
-DOT = [\035]
-L_PAREN = [\036]
-R_PAREN = [\037]
-L_BRACE = [\040]
-R_BRACE = [\041]
-L_BRACKET = [\042]
-R_BRACKET = [\043]
-WHITESPACE = [\044]
-EOL = [\045]
-EOF = [\046]
-INDENT = [\047]
-OUTDENT = [\050]
-ERROR = [\051]
+AND = [\016]
+OR = [\017]
+NOT = [\020]
+PLUS = [\021]
+MINUS = [\022]
+TIMES = [\023]
+DIV = [\024]
+MOD = [\025]
+POW = [\026]
+TILDE = [\027]
+HAT = [\030]
+BANG = [\031]
+AMPERSAND = [\032]
+PIPE = [\033]
+DBL_AMPERSAND = [\034]
+DBL_PIPE = [\035]
+EQ = [\036]
+NEQ = [\037]
+LT = [\040]
+LTE = [\041]
+GT = [\042]
+GTE = [\043]
+EQUALS = [\044]
+HASHROCKET = [\045]
+COLON = [\046]
+COMMA = [\047]
+DOT = [\050]
+L_PAREN = [\051]
+R_PAREN = [\052]
+L_BRACE = [\053]
+R_BRACE = [\054]
+L_BRACKET = [\055]
+R_BRACKET = [\056]
+WHITESPACE = [\057]
+EOL = [\060]
+EOF = [\061]
+INDENT = [\062]
+OUTDENT = [\063]
+ERROR = [\064]
 # END-TOKENS
 
 %%
