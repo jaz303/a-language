@@ -108,8 +108,9 @@ static int hash_resize(hash_t *h, hash_int_t new_buckets) {
     return 1;
 }
 
-static void hash_init(hash_t *h) {
+static void hash_init(hash_t *h, hash_type_t type) {
     memset(h, 0, sizeof(hash_t));
+    h->type = type;
 }
 
 hash_int_t find_slot_by_str(hash_t *hsh, const char *str) {
@@ -239,11 +240,12 @@ hash_int_t hash_sdbm(const char* key) {
 
 intern_table_t* intern_table_create(context_t *ctx) {
     hash_t *hsh = malloc(sizeof(hash_t));
-    if (hsh) {
-        hash_init(hsh);
-        hsh->type = HASH_INTERN_TABLE;
-    }
+    if (hsh) hash_init(hsh, HASH_INTERN_TABLE);
     return (intern_table_t*)hsh;
+}
+
+void intern_table_init(intern_table_t *hsh) {
+    hash_init((hash_t*)hsh, HASH_INTERN_TABLE);
 }
 
 void intern_table_destroy(context_t *ctx, intern_table_t *hsh) {
@@ -290,11 +292,12 @@ hash_int_t intern_table_size(intern_table_t *hsh) {
 
 symbol_table_t* symbol_table_create(context_t *ctx) {
     hash_t *hsh = malloc(sizeof(hash_t));
-    if (hsh) {
-        hash_init(hsh);
-        hsh->type = HASH_SYMBOL_TABLE;
-    }
+    if (hsh) hash_init(hsh, HASH_SYMBOL_TABLE);
     return (symbol_table_t*)hsh;
+}
+
+void symbol_table_init(symbol_table_t *hsh) {
+    hash_init((hash_t*)hsh, HASH_SYMBOL_TABLE);
 }
 
 void symbol_table_destroy(symbol_table_t *hsh) {
@@ -341,11 +344,12 @@ hash_int_t symbol_table_size(symbol_table_t *hsh) {
 
 dict_t* dict_create(context_t *ctx) {
     hash_t *hsh = malloc(sizeof(hash_t));
-    if (hsh) {
-        hash_init(hsh);
-        hsh->type = HASH_DICT;
-    }
+    if (hsh) hash_init(hsh, HASH_DICT);
     return (symbol_table_t*)hsh;
+}
+
+void dict_init(dict_t *hsh) {
+    hash_init((hash_t*)hsh, HASH_DICT);
 }
 
 void dict_destroy(dict_t *hsh) {
