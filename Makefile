@@ -49,11 +49,20 @@ clean:
 
 # Tests
 
-build/test_parser: all build src/tests/test_parser.o
-	gcc -o $@ $(LDFLAGS) src/tests/test_parser.o $(OBJECTS)
+test/hash_test: src/token_names.o src/ast.o test/hash_test.o src/hash.o src/global.o
+	gcc -o $@ $(LDFLAGS) src/token_names.o src/ast.o test/hash_test.o src/hash.o src/global.o
 
-build/test_scanner_repl: all build src/tests/test_scanner_repl.o
-	gcc -o $@ $(LDFLAGS) src/tests/test_scanner_repl.o $(OBJECTS)
+test: test/hash_test
+	@./test/hash_test
 
-test_parser: build/test_parser
-	@./test/parsing/test_all
+
+
+# 
+# build/test_parser: all build src/tests/test_parser.o
+# 	gcc -o $@ $(LDFLAGS) src/tests/test_parser.o $(OBJECTS)
+# 
+# build/test_scanner_repl: all build src/tests/test_scanner_repl.o
+# 	gcc -o $@ $(LDFLAGS) src/tests/test_scanner_repl.o $(OBJECTS)
+# 
+# test_parser: build/test_parser
+# 	@./test/parsing/test_all

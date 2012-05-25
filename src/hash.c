@@ -10,7 +10,6 @@
 // TODO: benchmark usefulness of all this bit-fiddling
 #define GH_BUCKET_STATE(flags, ix)          ((flags[ix>>2]>>((ix&3)<<1))&3)
 #define GH_SET_BUCKET_STATE(flags, ix, s)   (flags[ix>>2]=(flags[ix>>2]&(~(3<<((ix&3)<<1))))|(s<<((ix&3)<<1)))
-#define GH_DEBUG_PRINT(hsh)                 printf("b=%lu occ=%lu sz=%lu ub=%lu\n", (unsigned long)(hsh)->n_buckets, (unsigned long)(hsh)->n_occupied, (unsigned long)(hsh)->size, (unsigned long)(hsh)->upper_bound)
 
 #define HASH_ALLOC(hsh,sz)                  malloc(sz)
 #define HASH_REALLOC(hsh,ptr,sz)            realloc(ptr,sz)
@@ -239,7 +238,12 @@ hash_int_t hash_sdbm(const char* key) {
 }
 
 intern_table_t* intern_table_create(context_t *ctx) {
-    return NULL;
+    hash_t *hsh = malloc(sizeof(hash_t));
+    if (hsh) {
+        hash_init(hsh);
+        hsh->type = HASH_INTERN_TABLE;
+    }
+    return (intern_table_t*)hsh;
 }
 
 void intern_table_destroy(context_t *ctx, intern_table_t *hsh) {
@@ -279,13 +283,18 @@ int intern_table_delete(intern_table_t *hsh, const char *str) {
     }
 }
 
-hash_int_t intern_table_get_size(intern_table_t *hsh) {
+hash_int_t intern_table_size(intern_table_t *hsh) {
     HASH_CAST(hsh);
     return h->size;
 }
 
 symbol_table_t* symbol_table_create(context_t *ctx) {
-    return NULL;
+    hash_t *hsh = malloc(sizeof(hash_t));
+    if (hsh) {
+        hash_init(hsh);
+        hsh->type = HASH_SYMBOL_TABLE;
+    }
+    return (symbol_table_t*)hsh;
 }
 
 void symbol_table_destroy(symbol_table_t *hsh) {
@@ -312,25 +321,31 @@ void symbol_table_put(symbol_table_t *hsh, INTERN sym, VALUE val) {
     hash_put(h, sym, key, value);
 }
 
-int symbol_table_delete(symbol_table_t *hsh, INTERN sym) {
+VALUE symbol_table_delete(symbol_table_t *hsh, INTERN sym) {
     HASH_CAST(hsh);
     hash_int_t slot = find_slot_by_symbol(h, sym);
     if (slot == h->n_buckets) {
         return 0;
     } else {
+        VALUE v = h->buckets[slot].value.value;
         GH_SET_BUCKET_STATE(h->flags, slot, GH_BUCKET_DELETED);
         h->size--;
-        return 1;
+        return v;
     }
 }
 
-hash_int_t symbol_table_get_size(symbol_table_t *hsh) {
+hash_int_t symbol_table_size(symbol_table_t *hsh) {
     HASH_CAST(hsh);
     return h->size;
 }
 
 dict_t* dict_create(context_t *ctx) {
-    return NULL;    
+    hash_t *hsh = malloc(sizeof(hash_t));
+    if (hsh) {
+        hash_init(hsh);
+        hsh->type = HASH_DICT;
+    }
+    return (symbol_table_t*)hsh;
 }
 
 void dict_destroy(dict_t *hsh) {
@@ -359,20 +374,20 @@ void dict_put(dict_t *hsh, VALUE key, VALUE val) {
     // TODO: hash value
 }
 
-int dict_delete(dict_t *hsh, VALUE key) {
+VALUE dict_delete(dict_t *hsh, VALUE key) {
     HASH_CAST(hsh);
     hash_int_t slot = find_slot_by_value(h, key);
     if (slot == h->n_buckets) {
         return 0;
     } else {
+        VALUE v = h->buckets[slot].value.value;
         GH_SET_BUCKET_STATE(h->flags, slot, GH_BUCKET_DELETED);
         h->size--;
-        return 1;
+        return v;
     }
 }
 
-hash_int_t dict_get_size(dict_t *hsh) {
+hash_int_t dict_size(dict_t *hsh) {
     HASH_CAST(hsh);
     return h->size;
 }
-
