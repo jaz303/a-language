@@ -7,7 +7,6 @@ LDFLAGS		=
 
 BUILD_DIR	=	build
 SCANNER		=	src/scanner.c
-PARSER		=	src/parser.c
 
 OBJECTS		=	src/ast.o \
 				src/debug.o \
@@ -25,9 +24,6 @@ obj: $(OBJECTS)
 scanner: src/scanner.c
 
 src/scanner.c: src/scanner.leg
-	leg $< > $@
-
-src/parser.c: src/parser.leg
 	leg $< > $@
 
 build:

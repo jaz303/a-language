@@ -422,8 +422,15 @@ struct context {
  */
 
 typedef void scanner_t;
-typedef void parser_t;
 
+typedef struct {
+    context_t   *context;
+    scanner_t   *scanner;
+    char        *error;
+    token_t     current_token;
+    char        *current_text;
+    int         current_len;
+} parser_t;
 
 /*
  * VM Opcodes & State

@@ -6,10 +6,16 @@
 #include "menace/intern.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define YY_INPUT(buf, result, max_size)                                                 \
 {                                                                                       \
     int yyc = scanner_get_next_token(ctx->scanner, &ctx->token_text, &ctx->token_len);  \
+    if (yyc == T_EOF) { \
+        printf("BBOM!\n"); \
+        exit(1); \
+    } \
+    printf("%d %d %s\n", T_EOF, yyc, token_get_name(yyc)); \
     result = (T_EOF == yyc) ? 0 : (*(buf)=yyc, 1);                                      \
 }
 
@@ -71,9 +77,11 @@ static char* decode_string(char *str) {
 # Assignment should probably be an expression
 # Function_Args should always be visited, even if empty (so we get AST node)
 
+Program                 = stmts:Statement_Block END_OF_FILE         { $$ = stmts }
+
 Statement_Block         = INDENT EOL* stmts:Statements OUTDENT      { $$ = stmts }
 
-Statements              =   stmt:Statement EOL+                     { $$ = AST_MAKE(statements, stmt); }
+Statements              =   stmt:Statement EOL*                     { $$ = AST_MAKE(statements, stmt); }
                             cons:Statements?                        { ast_cons_statements($$, cons); }
 
 Statement               = if_stmt:If_Statement                      { $$ = if_stmt }
@@ -272,6 +280,7 @@ Non_Empty_Arguments     = L_PAREN - expr:Expression_List - R_PAREN
 
 Block_Prelude           = - COLON - EOL
 -                       = WHITESPACE*
+END_OF_FILE             = !.
 
 B_AND                   = AMPERSAND
 B_OR                    = PIPE

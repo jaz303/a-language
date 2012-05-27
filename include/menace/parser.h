@@ -5,7 +5,7 @@
 #include "menace/scanner.h"
 #include "menace/ast.h"
 
-parser_t*           parser_create(context_t *c, scanner_t *s);
+int                 parser_init(parser_t *p, context_t *c, scanner_t *s);
 ast_statements_t*   parser_parse(parser_t *p);
 
 #endif

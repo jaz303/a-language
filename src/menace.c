@@ -4,6 +4,9 @@
 #include <sysexits.h>
 
 #include "menace/global.h"
+#include "menace/scanner.h"
+#include "menace/parser.h"
+#include "menace/debug.h"
 
 void display_usage(int extended) {
     printf( "Usage: menace [switches] [--] [programfile] [arguments]\n");
@@ -39,9 +42,29 @@ void do_run(int ix, int argc, char *argv[]) {
 void do_pretty_print(int ix, int argc, char *argv[]) {
     require_arg(ix, argc);
     
+    FILE *file = fopen(argv[ix], "r");
+    if (file == NULL) {
+        printf("couldn't read file %s\n", argv[ix]);
+        exit(EX_NOINPUT);
+    }
+    
     context_t ctx;
     init_context(&ctx);
     
+    scanner_t *scanner = scanner_create_for_file(file);
+    
+    parser_t parser;
+    parser_init(&parser, &ctx, scanner);
+    
+    ast_statements_t *stmts = parser_parse(&parser);
+    if (stmts == NULL) {
+        printf("parse error\n");
+        exit(EX_DATAERR);
+    }
+    
+    fclose(file);
+    
+    pretty_print(&ctx, stmts, stdout);
 }
 
 enum {

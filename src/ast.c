@@ -103,7 +103,7 @@ ast_conditions_t* ast_mk_condition(context_t *ctx, ast_node_t *exp, ast_statemen
     return node;
 }
 
-ast_cons_cond(ast_conditions_t *conditions, ast_conditions_t *cons) {
+void ast_cons_cond(ast_conditions_t *conditions, ast_conditions_t *cons) {
     conditions->next = cons;
 }
 
@@ -242,9 +242,13 @@ void ast_cons_dict_members(ast_dict_members_t *mem, ast_dict_members_t *cons) {
     mem->next = cons;
 }
 
-ast_expressions_t* ast_mk_expressions(context_t *ctx, ast_node_t *exp, ast_expressions_t *cons) {
+ast_expressions_t* ast_mk_expressions(context_t *ctx, ast_node_t *exp) {
     ALLOC(ast_expressions_t);
     node->exp = exp;
-    node->next = cons;
+    node->next = NULL;
     return node;
+}
+
+void ast_cons_expressions(ast_expressions_t* exp, ast_expressions_t* cons) {
+    exp->next = cons;
 }

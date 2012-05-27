@@ -37,6 +37,7 @@ ast_node_t*             ast_mk_empty_dict(context_t *ctx);
 ast_node_t*             ast_mk_dict(context_t *ctx, ast_dict_members_t *members);
 ast_dict_members_t*     ast_mk_dict_members(context_t *ctx, ast_node_t *key, ast_node_t *value);
 void                    ast_cons_dict_members(ast_dict_members_t *mem, ast_dict_members_t *cons);
-ast_expressions_t*      ast_mk_expressions(context_t *ctx, ast_node_t *exp, ast_expressions_t *cons);
+ast_expressions_t*      ast_mk_expressions(context_t *ctx, ast_node_t *exp);
+void                    ast_cons_expressions(ast_expressions_t* exp, ast_expressions_t* cons);
 
 #endif
