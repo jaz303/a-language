@@ -7,6 +7,6 @@
 
 scanner_t*  scanner_create_for_file(FILE *file);
 void        scanner_destroy(scanner_t *s);
-token_t     scanner_get_next_token(scanner_t *s, const char **text, int *len);
+token_t     scanner_get_next_token(scanner_t *s, char **text, int *len);
 
 #endif

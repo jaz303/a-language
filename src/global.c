@@ -1,10 +1,29 @@
 #include "menace/global.h"
 #include "menace/ast.h"
+#include "menace/intern.h"
 
 #include <stdlib.h>
 
+int is_globally_initialised = 0;
+
+int global_init() {
+    if (!is_globally_initialised) {
+        ast_global_init();
+        is_globally_initialised = 1;
+    }
+    return 1;
+}
+
 int context_init(context_t *ctx) {
-    ast_init_context(ctx);
+    if (!is_globally_initialised) {
+        if (!global_init()) {
+            return 0;
+        }
+    }
+    
+    intern_init(ctx);
+    ast_init(ctx);
+    
     return 1;
 }
 

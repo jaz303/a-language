@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 /*
  * Forward declarations
@@ -54,12 +55,14 @@ typedef enum {
 typedef float REAL;
 
 /*
+ * Type tagging:
+ *
  * 000000 - ptr
- * 000001 - int
- * 000010 - null
- * 000110 - false
- * 001110 - true
- * 001010 - symbol
+ * 000001 - int     (31/63 MSBs == integer value)
+ * 000010 - null    (== 0x02)
+ * 000110 - false   (== 0x06)
+ * 001110 - true    (== 0x0C) (boolean can be identified with `foo & 0x06`)
+ * 001010 - symbol  (28/60 MSBs == symbol value)
  */
  
 #define MK_PTR(p)                   ((VALUE)p)
@@ -194,9 +197,9 @@ struct hash_node {
 };
 
 typedef enum {
-    HASH_SYMBOL_TABLE,                      /* INTERN => VALUE */
-    HASH_INTERN_TABLE,                      /* cstring => INTERN */
-    HASH_DICT                               /* VALUE => VALUE */
+    HASH_SYMBOL_TABLE,                      /* INTERN   => VALUE    */
+    HASH_INTERN_TABLE,                      /* cstring  => INTERN   */
+    HASH_DICT                               /* VALUE    => VALUE    */
 } hash_type_t;
 
 typedef struct {
@@ -207,13 +210,24 @@ typedef struct {
     hash_int_t          size;               /* # of K/V pairs in the hash (i.e. full buckets) */
     unsigned char       *flags;             /* auxiliary packed flag array for tracking bucket states */
     hash_node_t         *buckets;           /* the buckets */
-    void                *userdata;          /* custom userdata. mainly useful for passing context into user-defined memory mgmt functions */
+    void                *userdata;          /* not used at present */
 } hash_t;
 
 typedef hash_t symbol_table_t;
 typedef hash_t intern_table_t;
 typedef hash_t dict_t;
-    
+
+/*
+ * Intern wrapper struct
+ */
+ 
+typedef struct {
+    INTERN              count;              /* number of interned strings */
+    size_t              array_size;         /* allocated size of backing array */
+    intern_table_t      s2i;                /* cstring => INTERN */
+    const char          **i2s;              /* INTERN => cstring */
+} intern_t;
+
 /*
  * Token types
  */
@@ -224,6 +238,15 @@ enum {
     #include "menace/tokens.x"
 };
 #undef TOKEN
+
+/* semantic token names */
+#define T_B_AND     T_AMPERSAND
+#define T_B_OR      T_PIPE
+#define T_B_XOR     T_HAT
+#define T_B_NOT     T_TILDE
+#define T_L_AND     T_DBL_AMPERSAND
+#define T_L_OR      T_DBL_PIPE
+#define T_L_NOT     T_BANG
 
 typedef unsigned char token_t;
 extern const char const *token_names[];
@@ -243,22 +266,18 @@ typedef struct {
 } ast_pool_t;
 
 typedef enum {
-    AST_LITERAL_NULL,
-    AST_LITERAL_INT,
-    AST_LITERAL_BOOL,
-    AST_LITERAL_STRING,
-    AST_LITERAL_COLOR,
-    AST_LITERAL_IDENT,
-    AST_LITERAL_SYMBOL,
-    AST_LITERAL_ARRAY,
-    AST_LITERAL_DICT,
-    AST_STATEMENTS,
+    AST_LITERAL,
+    AST_IDENT,
+    AST_ARRAY,
+    AST_DICT,
     AST_WHILE,
+    AST_ASSIGN,
     AST_IF,
     AST_PASS,
-    AST_PARAMETER_LIST,
-    AST_BINARY_OP,
-    AST_UNARY_OP
+    AST_RETURN,
+    AST_FUNCTION,
+    AST_UNARY_EXP,
+    AST_BINARY_EXP,
 } ast_node_type_t;
 
 #define AST_LITERAL_MAX AST_LITERAL_SYMBOL
@@ -267,17 +286,21 @@ typedef enum {
 
 typedef struct ast_node                     ast_node_t;
 typedef struct ast_statements               ast_statements_t;
+typedef struct ast_expressions              ast_expressions_t;
 typedef struct ast_conditions               ast_conditions_t;
 typedef struct ast_parameters               ast_parameters_t;
 typedef struct ast_array_members            ast_array_members_t;
 typedef struct ast_dict_members             ast_dict_members_t;
 typedef struct ast_literal                  ast_literal_t;
+typedef struct ast_ident                    ast_ident_t;
 typedef struct ast_literal_collection       ast_literal_collection_t;
-typedef struct ast_unary_expression         ast_unary_expression_t;
-typedef struct ast_binary_expression        ast_binary_expression_t;
+typedef struct ast_unary_exp                ast_unary_exp_t;
+typedef struct ast_binary_exp               ast_binary_exp_t;
 typedef struct ast_while                    ast_while_t;
 typedef struct ast_if                       ast_if_t;
 typedef struct ast_pass                     ast_pass_t;
+typedef struct ast_assign                   ast_assign_t;
+typedef struct ast_return                   ast_return_t;
 typedef struct ast_function                 ast_function_t;
 
 /* AST support types */
@@ -291,15 +314,19 @@ struct ast_statements {
     ast_statements_t        *next;
 };
 
+struct ast_expressions {
+    ast_node_t              *exp;
+    ast_expressions_t       *next;
+};
+
 struct ast_conditions {
-    ast_node_t              *expression;
+    ast_node_t              *exp;
     ast_statements_t        *body;
     ast_conditions_t        *next;
 };
 
 struct ast_parameters {
     INTERN                  name;
-    VALUE                   default_value;
     ast_parameters_t        *next;
 };
 
@@ -318,25 +345,30 @@ struct ast_dict_members {
 
 struct ast_literal {
     ast_node_type_t         type;
-    /* dunno */
+    VALUE                   value;
+};
+
+struct ast_ident {
+    ast_node_type_t         type;
+    INTERN                  name;
 };
 
 struct ast_literal_collection {
     ast_node_type_t         type;
-    ast_node_t              *members;
+    void                    *head;
 };
 
-struct ast_unary_expression {
+struct ast_unary_exp {
     ast_node_type_t         type;
     token_t                 operator;
-    ast_node_t              *expression;
+    ast_node_t              *exp;
 };
 
-struct ast_binary_expression {
+struct ast_binary_exp {
     ast_node_type_t         type;
-    ast_node_t              *left;
     token_t                 operator;
-    ast_node_t              *right;
+    ast_node_t              *lexp;
+    ast_node_t              *rexp;
 };
 
 /* AST statement types */
@@ -356,7 +388,19 @@ struct ast_pass {
     ast_node_type_t         type;
 };
 
+struct ast_assign {
+    ast_node_type_t         type;
+    ast_node_t              *target;
+    ast_node_t              *value;
+};
+
+struct ast_return {
+    ast_node_type_t         type;
+    ast_node_t              *exp;
+};
+
 struct ast_function {
+    ast_node_type_t         type;
     INTERN                  name;
     int                     arity;
     ast_parameters_t        *parameters;
@@ -369,6 +413,7 @@ struct ast_function {
 
 struct context {
     ast_pool_t      ast_pool;
+    intern_t        intern;
 };
 
 /*
@@ -403,7 +448,8 @@ typedef struct {
 /* 
  * Utility Functions
  */
- 
+
+int             global_init();
 int             context_init(context_t *ctx);
 const char*     token_get_name(token_t);
 UINT            roundup2(UINT v);

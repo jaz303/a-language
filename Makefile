@@ -13,6 +13,7 @@ OBJECTS		=	src/ast.o \
 				src/debug.o \
 				src/global.o \
 				src/hash.o \
+				src/intern.o \
 				src/parser.o \
 				src/scanner.o \
 				src/token_names.o
@@ -36,8 +37,8 @@ all: obj
 
 # Binaries
 
-build/menace: all build
-	$(CC) -o build/main $(LDFLAGS) $(OBJECTS)
+build/menace: all build src/menace.o
+	$(CC) -o build/menace $(LDFLAGS) src/menace.o $(OBJECTS)
 
 # Cleanup
 
@@ -49,11 +50,11 @@ clean:
 
 # Tests
 
-test/hash_test: src/token_names.o src/ast.o test/hash_test.o src/hash.o src/global.o
-	gcc -o $@ $(LDFLAGS) src/token_names.o src/ast.o test/hash_test.o src/hash.o src/global.o
+test/hash_test.out: obj test/hash_test.o
+	gcc -o $@ $(LDFLAGS) $(OBJECTS) test/hash_test.o
 
-test: test/hash_test
-	@./test/hash_test
+test: test/hash_test.out
+	@./test/hash_test.out
 
 
 

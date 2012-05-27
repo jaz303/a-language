@@ -4,6 +4,6 @@
 #include "menace/global.h"
 #include <stdio.h>
 
-void debug_ast_print(context_t *ctx, ast_id_t node, FILE *stream);
+void pretty_print(context_t *ctx, ast_statements_t *stmts, FILE *stream);
 
 #endif

@@ -29,7 +29,6 @@
 Token           = INTEGER                           { $$ = T_INTEGER }
                 | STRING                            { $$ = T_STRING }
                 | Punctuation
-                | Operator
                 | Keyword
                 | SYMBOL                            { $$ = T_SYMBOL }
                 | IDENT                             { $$ = T_IDENT }
@@ -45,30 +44,37 @@ INTEGER         = < '0' > ![xob]
                 
 STRING          = ["] < STRING_CHAR* > ["]
                 
-Punctuation     = ':'       !IDENT_REST             { $$ = T_COLON }
+Punctuation     = '+'                               { $$ = T_PLUS }
+                | '-'                               { $$ = T_MINUS }
+                | '*'       !'*'                    { $$ = T_TIMES }
+                | '/'                               { $$ = T_DIV }
+                | '%'                               { $$ = T_MOD }
+                | '**'                              { $$ = T_POW }
+                | '~'                               { $$ = T_TILDE }
+                | '^'                               { $$ = T_HAT }
+                | '!'                               { $$ = T_BANG }
+                | '&'       !'&'                    { $$ = T_AMPERSAND }
+                | '|'       !'|'                    { $$ = T_PIPE }
+                | '&&'                              { $$ = T_DBL_AMPERSAND }
+                | '||'                              { $$ = T_DBL_PIPE }
+                | '=='                              { $$ = T_EQ }
+                | '!='                              { $$ = T_NEQ }
+                | '<'                               { $$ = T_LT }
+                | '<='                              { $$ = T_LTE }
+                | '>'                               { $$ = T_GT }
+                | '>='                              { $$ = T_GTE }
+                | '='       !'>'                    { $$ = T_EQUALS }
                 | '=>'                              { $$ = T_HASHROCKET }
-                | '('                               { $$ = T_L_PAREN }
-                | ')'                               { $$ = T_R_PAREN }
-                | '['                               { $$ = T_L_BRACKET }
-                | ']'                               { $$ = T_R_BRACKET }
-                | '{'                               { $$ = T_L_BRACE }
-                | '}'                               { $$ = T_R_BRACE }
+                | ':'       !IDENT_START            { $$ = T_COLON }
                 | ','                               { $$ = T_COMMA }
                 | '.'                               { $$ = T_DOT }
+                | '('                               { $$ = T_L_PAREN }
+                | ')'                               { $$ = T_R_PAREN }
+                | '{'                               { $$ = T_L_BRACE }
+                | '}'                               { $$ = T_R_BRACE }
+                | '['                               { $$ = T_L_BRACKET }
+                | ']'                               { $$ = T_R_BRACKET }
                 
-Operator        = '+'                               { $$ = T_OP_PLUS }
-                | '-'                               { $$ = T_OP_MINUS }
-                | '**'                              { $$ = T_OP_POW }
-                | '*'                               { $$ = T_OP_TIMES }
-                | '/'                               { $$ = T_OP_DIV }
-                | '=='                              { $$ = T_OP_EQ }
-                | '!='                              { $$ = T_OP_NEQ }
-                | '>='                              { $$ = T_OP_GTE }
-                | '>'                               { $$ = T_OP_GT }
-                | '<='                              { $$ = T_OP_LTE }
-                | '<'                               { $$ = T_OP_LT }
-                | '='       !'>'                    { $$ = T_OP_ASSIGN }
-    
 Keyword         = 'def'     !IDENT_REST             { $$ = T_DEF }
                 | 'while'   !IDENT_REST             { $$ = T_WHILE }
                 | 'if'      !IDENT_REST             { $$ = T_IF }    
@@ -78,6 +84,9 @@ Keyword         = 'def'     !IDENT_REST             { $$ = T_DEF }
                 | 'false'   !IDENT_REST             { $$ = T_FALSE }
                 | 'pass'    !IDENT_REST             { $$ = T_PASS }
                 | 'return'  !IDENT_REST             { $$ = T_RETURN }
+                | 'and'     !IDENT_REST             { $$ = T_AND }
+                | 'or'      !IDENT_REST             { $$ = T_OR }
+                | 'not'     !IDENT_REST             { $$ = T_NOT }
 
 SYMBOL          = ':' < IDENT_START IDENT_REST* >
 IDENT           = < IDENT_START IDENT_REST* >
@@ -172,7 +181,7 @@ void scanner_destroy(scanner_t *s) {
     free(ctx);
 }
 
-token_t scanner_get_next_token(scanner_t *s, const char **text, int *len) {
+token_t scanner_get_next_token(scanner_t *s, char **text, int *len) {
 
     yycontext *ctx = (yycontext*)s;
     

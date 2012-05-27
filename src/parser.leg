@@ -3,6 +3,7 @@
 #include "menace/parser.h"
 #include "menace/scanner.h"
 #include "menace/ast.h"
+#include "menace/intern.h"
 
 #include <stdio.h>
 
@@ -12,21 +13,58 @@
     result = (T_EOF == yyc) ? 0 : (*(buf)=yyc, 1);                                      \
 }
 
-#define YY_CTX_LOCAL
-#define YYSTYPE             ast_node_t*
+#define YY_CTX_LOCAL        1
+#define YYSTYPE             void*
 #define YY_PARSE(T)         static T
 
 #define YY_CTX_MEMBERS                  \
     scanner_t           *scanner;       \
     context_t           *context;       \
-    const char          *token_text;    \
+    char                *token_text;    \
     int                 token_len;      \
     char                *error;
     
-#define AST_MAKE(type, ...) ast_mk_##type(yyctx->context, ##__VA_ARGS__)
-#define BIN_EXP(operator)   $$ = ast_mk_bin_exp(yyctx->context, operator, $$, r)
-#define CTX                 yyctx->context
-#define TEXT                yyctx->token_text
+#define AST_MAKE(type, ...) ast_mk_##type(ctx->context, ##__VA_ARGS__)
+#define CTX                 ctx->context
+#define TEXT                ctx->token_text
+
+static INT decode_integer(const char *str) {
+    // TODO: detect overflow
+    INT val = 0;
+    int len = strlen(str);
+    if (len > 2 && str[1] == 'x') {
+        for (str+=2;*str;str++) {
+            if (*str == '_') continue;
+            val *= 16;
+            if (*str >= 'a')        val += (*str - 'a' + 10);
+            else if (*str >= 'A')   val += (*str - 'A' + 10);
+            else                    val += (*str - '0');
+        }
+    } else if (len > 2 && str[1] == 'o') {
+        for (str+=2;*str;str++) {
+            if (*str == '_') continue;
+            val *= 8;
+            val += (*str) - '0';
+        }
+    } else if (len > 2 && str[1] == 'b') {
+        for (str+=2;*str;str++) {
+            if (*str == '_') continue;
+            val *= 2;
+            val += (*str) - '0';
+        }
+    } else {
+        for (;*str;str++) {
+            if (*str == '_') continue;
+            val *= 10;
+            val += (*str) - '0';
+        }
+    }
+    return val;
+}
+
+static char* decode_string(char *str) {
+    return str;
+}
 %}
 
 # Points to consider:
@@ -34,7 +72,10 @@
 # Function_Args should always be visited, even if empty (so we get AST node)
 
 Statement_Block         = INDENT EOL* stmts:Statements OUTDENT      { $$ = stmts }
-Statements              = stmt:Statement EOL+ cons:Statements?      { $$ = AST_MAKE(statements, stmt, cons); }
+
+Statements              =   stmt:Statement EOL+                     { $$ = AST_MAKE(statements, stmt); }
+                            cons:Statements?                        { ast_cons_statements($$, cons); }
+
 Statement               = if_stmt:If_Statement                      { $$ = if_stmt }
                         | while_stmt:While_Statement                { $$ = while_stmt }
                         | pass_stmt:Pass_Statement                  { $$ = pass_stmt }
@@ -46,14 +87,15 @@ Statement               = if_stmt:If_Statement                      { $$ = if_st
 #
 # If/elseif/else statement
 
-If_Statement            = cond:If_Part cons:If_Cons?
-                        { $$ = AST_MAKE(if, ast_cons_cond(cond, cons)) }
+If_Statement            =   cond:If_Part                    { $$ = AST_MAKE(if, cond) }
+                            cons:If_Cons?                   { ast_cons_cond(cond, cons) }
+
+If_Cons                 =   cond:Elseif_Part                { $$ = cond }
+                            cons:If_Cons?                   { ast_cons_cond(cond, cons) }
+                        |   cond:Else_Part                  { $$ = cond }
 
 If_Part                 = IF - exp:Expression Block_Prelude body:Statement_Block
                         { $$ = AST_MAKE(condition, exp, body) }
-                        
-If_Cons                 = cond:Elseif_Part cons:If_Cons?    { $$ = ast_cons_cond(cond, cons) }
-                        | cond:Else_Part                    { $$ = cond }
                         
 Elseif_Part             = ELSEIF - exp:Expression Block_Prelude body:Statement_Block
                         { $$ = AST_MAKE(condition, exp, body) }
@@ -96,8 +138,7 @@ Return_Statement        = RETURN - EOL                      { $$ = AST_MAKE(retu
 
 Named_Function_Def      = DEF - name:IDENT - params:Parameter_List? Block_Prelude body:Statement_Block
                         { $$ = AST_MAKE(named_function,
-                                        CTX,
-                                        string_to_intern(ctx->context, ctx->token_text),
+                                        string_to_intern(CTX, TEXT),
                                         params,
                                         body) }
                           
@@ -106,7 +147,11 @@ Parameter_List          = empty:Empty_Parameters                    { $$ = empty
 
 Empty_Parameters        = L_PAREN - R_PAREN                         { $$ = NULL }
 Non_Empty_Parameters    = L_PAREN - params:Parameters - R_PAREN     { $$ = params }
-Parameters              = id:IDENT - (COMMA - cons:Parameters)?     { $$ = AST_MAKE(parameters, id, cons) }
+Parameters              = id:IDENT                                  { $$ = AST_MAKE(parameters, string_to_intern(CTX, TEXT)) }
+                            -
+                            (   COMMA -
+                                cons:Parameters                     { ast_cons_parameters($$, cons) }
+                            )?
 
 #
 # Expressions
@@ -116,46 +161,43 @@ Expression              = exp:Exp1                          { $$ = exp }
 # conditional expression here
 
 Exp1                    = l:Exp2                            { $$ = l }
-                            (       L_OR - r:Exp2           { $$ = BIN_EXP(T_L_OR) }
+                            (       L_OR - r:Exp2           { $$ = ast_mk_binary_exp(CTX, T_L_OR, $$, r) }
                             ) * -
 
 Exp2                    = l:Exp3                            { $$ = l }
-                            (       L_AND - r:Exp3          { $$ = BIN_EXP(T_L_AND) }
+                            (       L_AND - r:Exp3          { $$ = ast_mk_binary_exp(CTX, T_L_AND, $$, r) }
                             ) * -
 
 Exp3                    = l:Exp4                            { $$ = l }
-                            (       (B_AND - r:Exp4)        { $$ = BIN_EXP(T_B_AND) }
-                                |   (B_OR  - r:Exp4)        { $$ = BIN_EXP(T_B_OR) }
-                                |   (B_XOR - r:Exp4)        { $$ = BIN_EXP(T_B_XOR) }
+                            (       (B_AND - r:Exp4)        { $$ = ast_mk_binary_exp(CTX, T_B_AND, $$, r) }
+                                |   (B_OR  - r:Exp4)        { $$ = ast_mk_binary_exp(CTX, T_B_OR, $$, r) }
+                                |   (B_XOR - r:Exp4)        { $$ = ast_mk_binary_exp(CTX, T_B_XOR, $$, r) }
                             ) * -
                             
 Exp4                    = l:Exp5                            { $$ = l }
-                            (       (EQ  - r:Exp5)          { $$ = BIN_EXP(T_EQ) }
-                                |   (NEQ - r:Exp5)          { $$ = BIN_EXP(T_NEQ) }
+                            (       (EQ  - r:Exp5)          { $$ = ast_mk_binary_exp(CTX, T_EQ, $$, r) }
+                                |   (NEQ - r:Exp5)          { $$ = ast_mk_binary_exp(CTX, T_NEQ, $$, r) }
                             ) * -
                             
-Exp5                    = l:Exp6
-                            (
-                                    (LT  - r:Exp6)          { $$ = BIN_EXP(T_LT) }
-                                |   (LTE - r:Exp6)          { $$ = BIN_EXP(T_LTE) }
-                                |   (GT  - r:Exp6)          { $$ = BIN_EXP(T_GT) }
-                                |   (GTE - r:Exp6)          { $$ = BIN_EXP(T_GTE) }
+Exp5                    = l:Exp6                            { $$ = l }
+                            (       (LT  - r:Exp6)          { $$ = ast_mk_binary_exp(CTX, T_LT, $$, r) }
+                                |   (LTE - r:Exp6)          { $$ = ast_mk_binary_exp(CTX, T_LTE, $$, r) }
+                                |   (GT  - r:Exp6)          { $$ = ast_mk_binary_exp(CTX, T_GT, $$, r) }
+                                |   (GTE - r:Exp6)          { $$ = ast_mk_binary_exp(CTX, T_GTE, $$, r) }
                             ) * -
                             
 # shift operators here
 
-Exp6                    = l:Exp7
-                            (
-                                    (PLUS  - r:Exp7)        { $$ = BIN_EXP(T_PLUS) }
-                                |   (MINUS - r:Exp7)        { $$ = BIN_EXP(T_MINUS) }
+Exp6                    = l:Exp7                            { $$ = l }
+                            (       (PLUS  - r:Exp7)        { $$ = ast_mk_binary_exp(CTX, T_PLUS, $$, r) }
+                                |   (MINUS - r:Exp7)        { $$ = ast_mk_binary_exp(CTX, T_MINUS, $$, r) }
                             ) * -
                             
-Exp7                    = l:Exp8
-                            (
-                                    (TIMES - r:Exp8)        { $$ = BIN_EXP(T_TIMES) }
-                                |   (DIV   - r:Exp8)        { $$ = BIN_EXP(T_DIV) }
-                                |   (MOD   - r:Exp8)        { $$ = BIN_EXP(T_MOD) }
-                                |   (POW   - r:Exp8)        { $$ = BIN_EXP(T_POW) }
+Exp7                    = l:Exp8                            { $$ = l }
+                            (       (TIMES - r:Exp8)        { $$ = ast_mk_binary_exp(CTX, T_TIMES, $$, r) }
+                                |   (DIV   - r:Exp8)        { $$ = ast_mk_binary_exp(CTX, T_DIV, $$, r) }
+                                |   (MOD   - r:Exp8)        { $$ = ast_mk_binary_exp(CTX, T_MOD, $$, r) }
+                                |   (POW   - r:Exp8)        { $$ = ast_mk_binary_exp(CTX, T_POW, $$, r) }
                             ) * -
 
 Exp8                    = PLUS exp:Exp7             -       { $$ = AST_MAKE(unary_exp, T_PLUS, exp) }
@@ -170,15 +212,15 @@ Exp9                    = B_NOT exp:Exp9            -       { $$ = AST_MAKE(unar
 # NOTE: Primary does not consume trailing space (to ensure Selector
 # follows immediately)
 Primary                 = L_PAREN - exp:Expression - R_PAREN        { $$ = exp }
-                        | IDENT                                     { $$ = AST_MAKE(ident, string_to_ident(CTX, TEXT)) }
-                        | val:Value                                 { $$ = val }
+                        | IDENT                                     { $$ = AST_MAKE(ident, string_to_intern(CTX, TEXT)) }
+                        | value:Value                               { $$ = value }
 
 Selector                = DOT IDENT Arguments?
                         | L_BRACKET Expression_List R_BRACKET
 
 Value                   = INTEGER           { $$ = AST_MAKE(integer, decode_integer(TEXT)) }
                         | STRING            { $$ = AST_MAKE(string, decode_string(TEXT)) }
-                        | SYMBOL            { $$ = AST_MAKE(symbol, TEXT) }
+                        | SYMBOL            { $$ = AST_MAKE(symbol, string_to_intern(CTX, TEXT)) }
                         | TRUE              { $$ = AST_MAKE(true) }
                         | FALSE             { $$ = AST_MAKE(false) }
                         | array:Array       { $$ = array }
@@ -187,27 +229,28 @@ Value                   = INTEGER           { $$ = AST_MAKE(integer, decode_inte
 #
 # Array literal
 
-Array                   = empty:Empty_Array                                 { $$ = empty }
-                        | non_empty:Array_With_Elements                     { $$ = non_empty }
+Array                   = empty:Empty_Array                                     { $$ = empty }
+                        | non_empty:Array_With_Elements                         { $$ = non_empty }
+Empty_Array             = L_BRACKET - R_BRACKET                                 { $$ = AST_MAKE(empty_array) }
+Array_With_Elements     = L_BRACKET - els:Array_Elements - R_BRACKET            { $$ = AST_MAKE(array, els) }
 
-Empty_Array             = L_BRACKET - R_BRACKET                             { $$ = AST_MAKE(empty_array) }
-Array_With_Elements     = L_BRACKET - els:Array_Elements - R_BRACKET        { $$ = AST_MAKE(array, els) }
-Array_Elements          = exp:Expression (COMMA - cons:Array_Elements)?     { $$ = AST_MAKE(array_members, exp, cons); }
+Array_Elements          =   exp:Expression                                      { $$ = AST_MAKE(array_members, exp) }
+                            (   COMMA -
+                                cons:Array_Elements                             { ast_cons_array_members($$, cons) }
+                            )?
 
 #
 # Dictionary Literal
 
-Dict                    = empty:Empty_Dict                      { $$ = empty }
-                        | non_empty:Dict_With_Elements          { $$ = non_empty }
+Dict                    = empty:Empty_Dict                                      { $$ = empty }
+                        | non_empty:Dict_With_Elements                          { $$ = non_empty }
+Empty_Dict              = L_BRACE - R_BRACE                                     { $$ = AST_MAKE(empty_dict) }
+Dict_With_Elements      = L_BRACE - els:Dict_Elements - R_BRACE                 { $$ = AST_MAKE(dict, els) }
 
-Empty_Dict              = L_BRACE - R_BRACE
-                        { $$ = AST_MAKE(empty_dictionary) }
-
-Dict_With_Elements      = L_BRACE - els:Dict_Elements - R_BRACE
-                        { $$ = AST_MAKE(dict, els) }
-
-Dict_Elements           = key:Expression - HASHROCKET - value:Expression - (COMMA - cons:Dict_Elements)?
-                        { $$ = AST_MAKE(dict_members, key, value, cons) }
+Dict_Elements           =   key:Expression - HASHROCKET - value:Expression -    { $$ = AST_MAKE(dict_members, key, value ) }
+                            (   COMMA -
+                                cons:Dict_Elements                              { ast_cons_dict_members($$, cons) }
+                            )?
 
 #
 # Expression list/arguments
@@ -299,17 +342,18 @@ ERROR = [\064]
 
 parser_t *parser_create(context_t *c, scanner_t *s) {
     yycontext *parser = malloc(sizeof(yycontext));
-    memset(parser, 0, sizeof(yycontext));
-    parser->scanner = s;
-    parser->context = c;
+    if (parser) {
+        memset(parser, 0, sizeof(yycontext));
+        parser->context = c;
+        parser->scanner = s;
+    }
     return (parser_t*)parser;
 }
 
-ast_id_t parser_parse(parser_t *p) {
+ast_statements_t* parser_parse(parser_t *p) {
     if (!yyparse((yycontext*)p)) {
-        return 0;
+        return NULL;
     } else {
-        return 1;
-        return ((yycontext*)p)->yy;
+        return (ast_statements_t*)((yycontext*)p)->yy;
     }
 }
