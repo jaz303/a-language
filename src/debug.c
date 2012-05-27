@@ -120,6 +120,12 @@ static void do_pretty_print_statements(context_t *ctx, ast_statements_t *stmts, 
 
 static void do_pretty_print_exp(context_t *ctx, ast_node_t *node, FILE *stream) {
     switch (node->type) {
+        case AST_IDENT:
+        {
+            ast_ident_t *i = (ast_ident_t*)node;
+            fprintf(stream, "%s", intern_to_string(ctx, i->name));
+            break;
+        }
         case AST_LITERAL:
         {
             VALUE v = ((ast_literal_t*)node)->value;
