@@ -1,14 +1,14 @@
 #include "menace/global.h"
 #include "menace/intern.h"
 
+#define INDENT() for (int i = 0; i < indent; i++) { fputs("    ", stream); }
+
 static void do_pretty_print_statements(context_t *ctx, ast_statements_t *stmts, FILE *stream, int indent);
 static void do_pretty_print_exp(context_t *ctx, ast_node_t *node, FILE *stream);
 
 static void do_pretty_print_statements(context_t *ctx, ast_statements_t *stmts, FILE *stream, int indent) {
     while (stmts) {
-        for (int i = 0; i < indent; i++) {
-            fputs("    ", stream);
-        }
+        INDENT();
         
         ast_node_t *node = stmts->statement;
         switch (node->type) {
@@ -44,8 +44,10 @@ static void do_pretty_print_statements(context_t *ctx, ast_statements_t *stmts, 
                     if (ix == 0) {
                         fputs("if ", stream);
                     } else if (curr->exp) {
+                        INDENT();
                         fputs("elseif ", stream);
                     } else {
+                        INDENT();
                         fputs("else", stream);
                     }
                     if (curr->exp) {
@@ -74,6 +76,7 @@ static void do_pretty_print_statements(context_t *ctx, ast_statements_t *stmts, 
                 } else {
                     fputs("return ", stream);
                     do_pretty_print_exp(ctx, r->exp, stream);
+                    fputc('\n', stream);
                 }
                 
                 break;

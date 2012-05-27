@@ -71,7 +71,7 @@ typedef float REAL;
 #define MK_INTVAL(i)                ((VALUE)((((INT)(i)) << 1) | 0x01))
 #define INTVAL(v)                   (((INT)v) >> 1)
 
-#define MK_SYMBOL(i)                ((VALUE)((((INTERN)(i)) << 4) & 0x0A))
+#define MK_SYMBOL(i)                ((VALUE)((((INTERN)(i)) << 4) | 0x0A))
 #define SYMBOLVAL(v)                (((INTERN)v) >> 4)
 
 #define MK_FLOATVAL(ctx, v)         ((void)v, NULL)
@@ -100,7 +100,7 @@ typedef float REAL;
 #define VALUE_IS_PTR(v)             (((INT)v & 0x03) == 0)
 #define VALUE_IS_INT(v)             (((INT)v & 0x01) == 0x01)
 #define VALUE_IS_BOOL(v)            ((((INT)v) & 0x06) == 0x06)
-#define VALUE_IS_SYMBOL(v)          ((((INTERN)v) & 0x0A) == 0x0A)
+#define VALUE_IS_SYMBOL(v)          ((((INT)v) & 0x0A) == 0x0A)
 #define VALUE_IS_FLOAT(v)           (IS_OBJECT(v) && OBJ_IS_FLOAT(v))
 #define VALUE_IS_COLOR(v)           (IS_OBJECT(v) && OBJ_IS_COLOR(v))
 #define VALUE_IS_STRING(v)          (IS_OBJECT(v) && OBJ_IS_STRING(v))

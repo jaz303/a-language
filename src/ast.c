@@ -91,7 +91,7 @@ void ast_cons_statements(ast_statements_t *stmts, ast_statements_t *cons) {
 
 ast_node_t* ast_mk_if(context_t *ctx, ast_conditions_t *conditions) {
     NODE(ast_if_t, AST_IF);
-    node->conditions = NULL;
+    node->conditions = conditions;
     return (ast_node_t*) node;
 }
 

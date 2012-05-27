@@ -69,6 +69,7 @@ ast_statements_t* parser_parse(parser_t *p) {
 #define ACCEPT_EOL()            ACCEPT(T_EOL, "expected EOL")
 #define ERROR_CHECK()           if (p->error) return NULL;
 #define ERROR(msg)              { p->error = msg; return NULL; }
+#define SAVE_OP()               token_t op = CURR(); NEXT(); SKIP();
 
 #define PARSE_CHILD(type, name, fn) \
     type *name = parse_##fn(p); \
@@ -134,11 +135,10 @@ ast_statements_t* parse_statement_block(parser_t *p) {
         ast_statements_t *stmts = AST_MAKE(statements, parse_statement(p));
         if (head == NULL) {
             head = stmts;
-        }
-        if (curr) {
+        } else {
             ast_cons_statements(curr, stmts);
-            curr = stmts;
         }
+        curr = stmts;
         CONSUME(T_EOL);
     }
 
@@ -197,7 +197,6 @@ ast_node_t* parse_if(parser_t *p) {
 
 ast_conditions_t* parse_condition(parser_t *p) {
     PARSE_CHILD(ast_node_t, exp, expression);
-    SKIP();
     BLOCK_PRELUDE();
     PARSE_CHILD(ast_statements_t, body, statement_block);
     return AST_MAKE(condition, exp, body);
@@ -306,6 +305,8 @@ ast_node_t* parse_logical_or_exp(parser_t *p) {
     PARSE_CHILD(ast_node_t, l, logical_and_exp);
     SKIP();
     while (CURR() == T_DBL_PIPE || CURR() == T_OR) {
+        SAVE_OP();
+        (void)op; /* suppress unused var warning */
         PARSE_CHILD(ast_node_t, r, logical_and_exp);
         l = AST_MAKE(binary_exp, T_L_OR, l, r);
         SKIP();
@@ -317,6 +318,8 @@ ast_node_t* parse_logical_and_exp(parser_t *p) {
     PARSE_CHILD(ast_node_t, l, bitwise_exp);
     SKIP();
     while (CURR() == T_DBL_AMPERSAND || CURR() == T_AND) {
+        SAVE_OP();
+        (void)op; /* suppress unused var warning */
         PARSE_CHILD(ast_node_t, r, bitwise_exp);
         l = AST_MAKE(binary_exp, T_L_AND, l, r);
         SKIP();
@@ -328,11 +331,11 @@ ast_node_t* parse_bitwise_exp(parser_t *p) {
     PARSE_CHILD(ast_node_t, l, equality_exp);
     SKIP();
     while (CURR() == T_AMPERSAND || CURR() == T_PIPE || CURR() == T_HAT) {
+        SAVE_OP();
         PARSE_CHILD(ast_node_t, r, equality_exp);
-        token_t op;
-        if (CURR() == T_AMPERSAND)      op = T_B_AND;
-        else if (CURR() == T_PIPE)      op = T_B_OR;
-        else if (CURR() == T_HAT)       op = T_B_XOR;
+        if (op == T_AMPERSAND)  op = T_B_AND;
+        else if (op == T_PIPE)  op = T_B_OR;
+        else if (op == T_HAT)   op = T_B_XOR;
         l = AST_MAKE(binary_exp, op, l, r);
         SKIP();
     }
@@ -343,8 +346,9 @@ ast_node_t* parse_equality_exp(parser_t *p) {
     PARSE_CHILD(ast_node_t, l, cmp_exp);
     SKIP();
     while (CURR() == T_EQ || CURR() == T_NEQ) {
+        SAVE_OP();
         PARSE_CHILD(ast_node_t, r, cmp_exp);
-        l = AST_MAKE(binary_exp, CURR(), l, r);
+        l = AST_MAKE(binary_exp, op, l, r);
         SKIP();
     }
     return l;
@@ -354,8 +358,9 @@ ast_node_t* parse_cmp_exp(parser_t *p) {
     PARSE_CHILD(ast_node_t, l, additive_exp);
     SKIP();
     while (CURR() == T_LT || CURR() == T_LTE || CURR() == T_GT || CURR() == T_GTE) {
+        SAVE_OP();
         PARSE_CHILD(ast_node_t, r, additive_exp);
-        l = AST_MAKE(binary_exp, CURR(), l, r);
+        l = AST_MAKE(binary_exp, op, l, r);
         SKIP();
     }
     return l;    
@@ -365,8 +370,9 @@ ast_node_t* parse_additive_exp(parser_t *p) {
     PARSE_CHILD(ast_node_t, l, multiplicative_exp);
     SKIP();
     while (CURR() == T_PLUS || CURR() == T_MINUS) {
+        SAVE_OP();
         PARSE_CHILD(ast_node_t, r, multiplicative_exp);
-        l = AST_MAKE(binary_exp, CURR(), l, r);
+        l = AST_MAKE(binary_exp, op, l, r);
         SKIP();
     }
     return l;    
@@ -376,8 +382,9 @@ ast_node_t* parse_multiplicative_exp(parser_t *p) {
     PARSE_CHILD(ast_node_t, l, arithmetic_unary_exp);
     SKIP();
     while (CURR() == T_TIMES || CURR() == T_DIV || CURR() == T_MOD || CURR() == T_POW) {
+        SAVE_OP();
         PARSE_CHILD(ast_node_t, r, arithmetic_unary_exp);
-        l = AST_MAKE(binary_exp, CURR(), l, r);
+        l = AST_MAKE(binary_exp, op, l, r);
         SKIP();
     }
     return l;
@@ -385,9 +392,7 @@ ast_node_t* parse_multiplicative_exp(parser_t *p) {
 
 ast_node_t* parse_arithmetic_unary_exp(parser_t *p) {
     if (CURR() == T_PLUS || CURR() == T_MINUS) {
-        token_t op = CURR();
-        NEXT();
-        SKIP();
+        SAVE_OP();
         PARSE_CHILD(ast_node_t, exp, multiplicative_exp);
         return AST_MAKE(unary_exp, op, exp);
     } else {
@@ -397,9 +402,8 @@ ast_node_t* parse_arithmetic_unary_exp(parser_t *p) {
 
 ast_node_t* parse_other_unary_exp(parser_t *p) {
     if (CURR() == T_BANG || CURR() == T_TILDE) {
-        token_t op = (CURR() == T_BANG) ? T_L_NOT : T_B_NOT;
-        NEXT();
-        SKIP();
+        SAVE_OP();
+        op = (op == T_BANG) ? T_L_NOT : T_B_NOT;
         PARSE_CHILD(ast_node_t, exp, other_unary_exp);
         return AST_MAKE(unary_exp, op, exp);
     } else {
@@ -490,10 +494,10 @@ ast_node_t* parse_value(parser_t *p) {
         return AST_MAKE(symbol, name);
     } else if (CURR() == T_TRUE) {
         NEXT();
-        return AST_MAKE(false);
+        return AST_MAKE(true);
     } else if (CURR() == T_FALSE) {
         NEXT();
-        return AST_MAKE(true);
+        return AST_MAKE(false);
     } else if (CURR() == T_L_BRACKET) {
         return parse_array(p);
     } else if (CURR() == T_L_BRACE) {

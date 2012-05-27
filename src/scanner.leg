@@ -52,7 +52,7 @@ Punctuation     = '+'                               { $$ = T_PLUS }
                 | '**'                              { $$ = T_POW }
                 | '~'                               { $$ = T_TILDE }
                 | '^'                               { $$ = T_HAT }
-                | '!'                               { $$ = T_BANG }
+                | '!'       !'='                    { $$ = T_BANG }
                 | '&'       !'&'                    { $$ = T_AMPERSAND }
                 | '|'       !'|'                    { $$ = T_PIPE }
                 | '&&'                              { $$ = T_DBL_AMPERSAND }
@@ -61,8 +61,8 @@ Punctuation     = '+'                               { $$ = T_PLUS }
                 | '!='                              { $$ = T_NEQ }
                 | '<'                               { $$ = T_LT }
                 | '<='                              { $$ = T_LTE }
-                | '>'                               { $$ = T_GT }
                 | '>='                              { $$ = T_GTE }
+                | '>'                               { $$ = T_GT }
                 | '='       !'>'                    { $$ = T_EQUALS }
                 | '=>'                              { $$ = T_HASHROCKET }
                 | ':'       !IDENT_START            { $$ = T_COLON }

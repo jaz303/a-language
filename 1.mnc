@@ -1,0 +1,110 @@
+1 and 1
+1 or 1
+1 && 1
+1 || 1
+1 | 1
+1 & 1
+1 ^ 1
+1 + 1
+1 - 1
+1 * 1
+1 / 1
+1 ** 1
+1 % 1
+!1
+~1
++1
+-1
+1==1
+1!=1
+
+((a+1)==2)/4+100**10<5>=5
+
+
+
+
+if a:
+    if b:
+        if c:
+            if d:
+                if e:
+                    pass
+        elseif c:
+            pass
+        else:
+            pass
+    elseif b:
+        pass
+else:
+    pass
+
+while !foo:
+    a = 1 + 10
+    
+    foobar1 = []
+    foobar2 = [ ]
+    foobar3 = {}
+    foobar4 = { }
+
+def foo:
+    pass
+
+def bar(a,b,c):
+    return a + b + c
+    0xff
+    0b110
+    0o77
+
+if a < b:
+    pass
+elseif c < d:
+    pass
+elseif 1 + 2 < 4:
+    pass
+else:
+    pass
+
+while 1 * (1 + 2) * 2:
+    pass
+    
+while (a < b) == (c + d):
+    pass
+
+while (2 && 2):
+    while a < 10:
+        a_variable = [1+2+3, 4*5**3, 5%2]
+        my_dict = { :foo => 1, :bar => 1 + 2 + 3, 1 + 2 => 3 + 4 }
+        a = a + 1
+        b = b - -5
+        c = c % 10 + 5
+        foo = :a_symbol
+        bar = :another_symbol
+        return 100
+        return
+
+while true:
+    pass
+
+while false:
+    pass
+    
+while -1:
+    pass
+    
+while ~1:
+    pass
+
+while !1:
+    pass
+    
+while !1 + 10:
+    pass
+    
+while [1,2,3]:
+    pass
+    
+while {1=>true, 3=>false, 5=>true}:
+    pass
+
+a = 10
+b = a + 1
