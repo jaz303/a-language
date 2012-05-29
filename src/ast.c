@@ -114,6 +114,15 @@ ast_node_t* ast_mk_while(context_t *ctx, ast_node_t *exp, ast_statements_t *body
     return (ast_node_t*) node;
 }
 
+ast_node_t* ast_mk_for(context_t *ctx, INTERN key_var, INTERN value_var, ast_node_t *exp, ast_statements_t *body) {
+    NODE(ast_for_t, AST_FOR);
+    node->key_var = key_var;
+    node->value_var = value_var;
+    node->exp = exp;
+    node->body = body;
+    return (ast_node_t*) node;
+}
+
 ast_node_t* ast_mk_pass(context_t *ctx) {
     return (ast_node_t*) &shared_pass;
 }

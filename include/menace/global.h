@@ -271,6 +271,7 @@ typedef enum {
     AST_ARRAY,
     AST_DICT,
     AST_WHILE,
+    AST_FOR,
     AST_ASSIGN,
     AST_IF,
     AST_PASS,
@@ -300,6 +301,7 @@ typedef struct ast_literal_collection       ast_literal_collection_t;
 typedef struct ast_unary_exp                ast_unary_exp_t;
 typedef struct ast_binary_exp               ast_binary_exp_t;
 typedef struct ast_while                    ast_while_t;
+typedef struct ast_for                      ast_for_t;
 typedef struct ast_if                       ast_if_t;
 typedef struct ast_pass                     ast_pass_t;
 typedef struct ast_assign                   ast_assign_t;
@@ -382,6 +384,14 @@ struct ast_binary_exp {
 struct ast_while {
     ast_node_type_t         type;
     ast_node_t              *condition;
+    ast_statements_t        *body;
+};
+
+struct ast_for {
+    ast_node_type_t         type;
+    INTERN                  key_var;
+    INTERN                  value_var;
+    ast_node_t              *exp;
     ast_statements_t        *body;
 };
 

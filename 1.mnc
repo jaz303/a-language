@@ -118,3 +118,10 @@ a.foo![10][20] = b.foo[10].bar(12, 34, a + b).bar(1,2,3)
 
 a.foo?
 a.bar!(1,2,3)
+
+for ix, val in [1,2,3,4,5,6,7,8,9,10]:
+    pass
+
+for k, v in bar:
+    pass
+

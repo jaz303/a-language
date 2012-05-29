@@ -15,6 +15,7 @@ ast_node_t*             ast_mk_if(context_t *ctx, ast_conditions_t *conditions);
 ast_conditions_t*       ast_mk_condition(context_t *ctx, ast_node_t *exp, ast_statements_t *body);
 void                    ast_cons_cond(ast_conditions_t *conditions, ast_conditions_t *cons);
 ast_node_t*             ast_mk_while(context_t *ctx, ast_node_t *exp, ast_statements_t *body);
+ast_node_t*             ast_mk_for(context_t *ctx, INTERN key_var, INTERN value_var, ast_node_t *exp, ast_statements_t *body);
 ast_node_t*             ast_mk_pass(context_t *ctx);
 ast_node_t*             ast_mk_assign(context_t *ctx, ast_node_t *target, ast_node_t *value);
 ast_node_t*             ast_mk_return(context_t *ctx, ast_node_t *retval);

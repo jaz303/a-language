@@ -16,6 +16,8 @@ TOKEN(T_RETURN,         "return"),
 TOKEN(T_AND,            "and"),
 TOKEN(T_OR,             "or"),
 TOKEN(T_NOT,            "not"),
+TOKEN(T_FOR,            "for"),
+TOKEN(T_IN,             "in"),
 
 TOKEN(T_PLUS,           "+"),
 TOKEN(T_MINUS,          "-"),

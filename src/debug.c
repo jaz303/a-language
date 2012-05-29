@@ -33,6 +33,21 @@ static void do_pretty_print_statements(context_t *ctx, ast_statements_t *stmts, 
                 
                 break;
             }
+            case AST_FOR:
+            {
+                ast_for_t *f = (ast_for_t*)node;
+                
+                fprintf(stream, "for ");
+                if (f->key_var) {
+                    fprintf(stream, "%s, ", intern_to_string(ctx, f->key_var));
+                }
+                fprintf(stream, "%s in ", intern_to_string(ctx, f->value_var));
+                do_pretty_print_exp(ctx, f->exp, stream);
+                fputs(":\n", stream);
+                do_pretty_print_statements(ctx, f->body, stream, indent + 1);
+                
+                break;
+            }
             case AST_ASSIGN:
             {
                 ast_assign_t *a = (ast_assign_t*)node;
@@ -251,6 +266,7 @@ static void do_pretty_print_exp(context_t *ctx, ast_node_t *node, FILE *stream) 
             break;
         }
         
+        case AST_FOR:
         case AST_WHILE:
         case AST_ASSIGN:
         case AST_IF:

@@ -278,6 +278,28 @@ YY_RULE(int) yy_STRING(yycontext *ctx); /* 3 */
 YY_RULE(int) yy_INTEGER(yycontext *ctx); /* 2 */
 YY_RULE(int) yy_Token(yycontext *ctx); /* 1 */
 
+YY_ACTION(void) yy_14_Keyword(yycontext *ctx, char *yytext, int yyleng)
+{
+#define yy ctx->yy
+#define yypos ctx->pos
+#define yythunkpos ctx->thunkpos
+  yyprintf((stderr, "do yy_14_Keyword\n"));
+   yy = T_IN ;
+#undef yythunkpos
+#undef yypos
+#undef yy
+}
+YY_ACTION(void) yy_13_Keyword(yycontext *ctx, char *yytext, int yyleng)
+{
+#define yy ctx->yy
+#define yypos ctx->pos
+#define yythunkpos ctx->thunkpos
+  yyprintf((stderr, "do yy_13_Keyword\n"));
+   yy = T_FOR ;
+#undef yythunkpos
+#undef yypos
+#undef yy
+}
 YY_ACTION(void) yy_12_Keyword(yycontext *ctx, char *yytext, int yyleng)
 {
 #define yy ctx->yy
@@ -1048,10 +1070,18 @@ YY_RULE(int) yy_Keyword(yycontext *ctx)
   {  int yypos65= ctx->pos, yythunkpos65= ctx->thunkpos;  if (!yy_IDENT_REST(ctx)) goto l65;  goto l64;
   l65:;	  ctx->pos= yypos65; ctx->thunkpos= yythunkpos65;
   }  yyDo(ctx, yy_11_Keyword, ctx->begin, ctx->end);  goto l43;
-  l64:;	  ctx->pos= yypos43; ctx->thunkpos= yythunkpos43;  if (!yymatchString(ctx, "not")) goto l42;
-  {  int yypos66= ctx->pos, yythunkpos66= ctx->thunkpos;  if (!yy_IDENT_REST(ctx)) goto l66;  goto l42;
-  l66:;	  ctx->pos= yypos66; ctx->thunkpos= yythunkpos66;
-  }  yyDo(ctx, yy_12_Keyword, ctx->begin, ctx->end);
+  l64:;	  ctx->pos= yypos43; ctx->thunkpos= yythunkpos43;  if (!yymatchString(ctx, "not")) goto l66;
+  {  int yypos67= ctx->pos, yythunkpos67= ctx->thunkpos;  if (!yy_IDENT_REST(ctx)) goto l67;  goto l66;
+  l67:;	  ctx->pos= yypos67; ctx->thunkpos= yythunkpos67;
+  }  yyDo(ctx, yy_12_Keyword, ctx->begin, ctx->end);  goto l43;
+  l66:;	  ctx->pos= yypos43; ctx->thunkpos= yythunkpos43;  if (!yymatchString(ctx, "for")) goto l68;
+  {  int yypos69= ctx->pos, yythunkpos69= ctx->thunkpos;  if (!yy_IDENT_REST(ctx)) goto l69;  goto l68;
+  l69:;	  ctx->pos= yypos69; ctx->thunkpos= yythunkpos69;
+  }  yyDo(ctx, yy_13_Keyword, ctx->begin, ctx->end);  goto l43;
+  l68:;	  ctx->pos= yypos43; ctx->thunkpos= yythunkpos43;  if (!yymatchString(ctx, "in")) goto l42;
+  {  int yypos70= ctx->pos, yythunkpos70= ctx->thunkpos;  if (!yy_IDENT_REST(ctx)) goto l70;  goto l42;
+  l70:;	  ctx->pos= yypos70; ctx->thunkpos= yythunkpos70;
+  }  yyDo(ctx, yy_14_Keyword, ctx->begin, ctx->end);
   }
   l43:;	
   yyprintf((stderr, "  ok   %s @ %s\n", "Keyword", ctx->buf+ctx->pos));
@@ -1063,127 +1093,127 @@ YY_RULE(int) yy_Keyword(yycontext *ctx)
 YY_RULE(int) yy_Punctuation(yycontext *ctx)
 {  int yypos0= ctx->pos, yythunkpos0= ctx->thunkpos;
   yyprintf((stderr, "%s\n", "Punctuation"));
-  {  int yypos68= ctx->pos, yythunkpos68= ctx->thunkpos;  if (!yymatchChar(ctx, '+')) goto l69;  yyDo(ctx, yy_1_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l69:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '-')) goto l70;  yyDo(ctx, yy_2_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l70:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '*')) goto l71;
-  {  int yypos72= ctx->pos, yythunkpos72= ctx->thunkpos;  if (!yymatchChar(ctx, '*')) goto l72;  goto l71;
-  l72:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;
-  }  yyDo(ctx, yy_3_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l71:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '/')) goto l73;  yyDo(ctx, yy_4_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l73:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '%')) goto l74;  yyDo(ctx, yy_5_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l74:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchString(ctx, "**")) goto l75;  yyDo(ctx, yy_6_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l75:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '~')) goto l76;  yyDo(ctx, yy_7_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l76:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '^')) goto l77;  yyDo(ctx, yy_8_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l77:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '!')) goto l78;
-  {  int yypos79= ctx->pos, yythunkpos79= ctx->thunkpos;  if (!yymatchChar(ctx, '=')) goto l79;  goto l78;
-  l79:;	  ctx->pos= yypos79; ctx->thunkpos= yythunkpos79;
-  }  yyDo(ctx, yy_9_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l78:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '&')) goto l80;
-  {  int yypos81= ctx->pos, yythunkpos81= ctx->thunkpos;  if (!yymatchChar(ctx, '&')) goto l81;  goto l80;
-  l81:;	  ctx->pos= yypos81; ctx->thunkpos= yythunkpos81;
-  }  yyDo(ctx, yy_10_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l80:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '|')) goto l82;
-  {  int yypos83= ctx->pos, yythunkpos83= ctx->thunkpos;  if (!yymatchChar(ctx, '|')) goto l83;  goto l82;
+  {  int yypos72= ctx->pos, yythunkpos72= ctx->thunkpos;  if (!yymatchChar(ctx, '+')) goto l73;  yyDo(ctx, yy_1_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l73:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '-')) goto l74;  yyDo(ctx, yy_2_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l74:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '*')) goto l75;
+  {  int yypos76= ctx->pos, yythunkpos76= ctx->thunkpos;  if (!yymatchChar(ctx, '*')) goto l76;  goto l75;
+  l76:;	  ctx->pos= yypos76; ctx->thunkpos= yythunkpos76;
+  }  yyDo(ctx, yy_3_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l75:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '/')) goto l77;  yyDo(ctx, yy_4_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l77:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '%')) goto l78;  yyDo(ctx, yy_5_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l78:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchString(ctx, "**")) goto l79;  yyDo(ctx, yy_6_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l79:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '~')) goto l80;  yyDo(ctx, yy_7_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l80:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '^')) goto l81;  yyDo(ctx, yy_8_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l81:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '!')) goto l82;
+  {  int yypos83= ctx->pos, yythunkpos83= ctx->thunkpos;  if (!yymatchChar(ctx, '=')) goto l83;  goto l82;
   l83:;	  ctx->pos= yypos83; ctx->thunkpos= yythunkpos83;
-  }  yyDo(ctx, yy_11_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l82:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchString(ctx, "&&")) goto l84;  yyDo(ctx, yy_12_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l84:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchString(ctx, "||")) goto l85;  yyDo(ctx, yy_13_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l85:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchString(ctx, "==")) goto l86;  yyDo(ctx, yy_14_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l86:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchString(ctx, "!=")) goto l87;  yyDo(ctx, yy_15_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l87:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '<')) goto l88;  yyDo(ctx, yy_16_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l88:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchString(ctx, "<=")) goto l89;  yyDo(ctx, yy_17_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l89:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchString(ctx, ">=")) goto l90;  yyDo(ctx, yy_18_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l90:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '>')) goto l91;  yyDo(ctx, yy_19_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l91:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '=')) goto l92;
-  {  int yypos93= ctx->pos, yythunkpos93= ctx->thunkpos;  if (!yymatchChar(ctx, '>')) goto l93;  goto l92;
-  l93:;	  ctx->pos= yypos93; ctx->thunkpos= yythunkpos93;
-  }  yyDo(ctx, yy_20_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l92:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchString(ctx, "=>")) goto l94;  yyDo(ctx, yy_21_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l94:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, ':')) goto l95;
-  {  int yypos96= ctx->pos, yythunkpos96= ctx->thunkpos;  if (!yy_IDENT_START(ctx)) goto l96;  goto l95;
-  l96:;	  ctx->pos= yypos96; ctx->thunkpos= yythunkpos96;
-  }  yyDo(ctx, yy_22_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l95:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, ',')) goto l97;  yyDo(ctx, yy_23_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l97:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '.')) goto l98;  yyDo(ctx, yy_24_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l98:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '(')) goto l99;  yyDo(ctx, yy_25_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l99:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, ')')) goto l100;  yyDo(ctx, yy_26_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l100:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '{')) goto l101;  yyDo(ctx, yy_27_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l101:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '}')) goto l102;  yyDo(ctx, yy_28_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l102:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, '[')) goto l103;  yyDo(ctx, yy_29_Punctuation, ctx->begin, ctx->end);  goto l68;
-  l103:;	  ctx->pos= yypos68; ctx->thunkpos= yythunkpos68;  if (!yymatchChar(ctx, ']')) goto l67;  yyDo(ctx, yy_30_Punctuation, ctx->begin, ctx->end);
+  }  yyDo(ctx, yy_9_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l82:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '&')) goto l84;
+  {  int yypos85= ctx->pos, yythunkpos85= ctx->thunkpos;  if (!yymatchChar(ctx, '&')) goto l85;  goto l84;
+  l85:;	  ctx->pos= yypos85; ctx->thunkpos= yythunkpos85;
+  }  yyDo(ctx, yy_10_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l84:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '|')) goto l86;
+  {  int yypos87= ctx->pos, yythunkpos87= ctx->thunkpos;  if (!yymatchChar(ctx, '|')) goto l87;  goto l86;
+  l87:;	  ctx->pos= yypos87; ctx->thunkpos= yythunkpos87;
+  }  yyDo(ctx, yy_11_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l86:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchString(ctx, "&&")) goto l88;  yyDo(ctx, yy_12_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l88:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchString(ctx, "||")) goto l89;  yyDo(ctx, yy_13_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l89:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchString(ctx, "==")) goto l90;  yyDo(ctx, yy_14_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l90:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchString(ctx, "!=")) goto l91;  yyDo(ctx, yy_15_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l91:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '<')) goto l92;  yyDo(ctx, yy_16_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l92:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchString(ctx, "<=")) goto l93;  yyDo(ctx, yy_17_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l93:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchString(ctx, ">=")) goto l94;  yyDo(ctx, yy_18_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l94:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '>')) goto l95;  yyDo(ctx, yy_19_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l95:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '=')) goto l96;
+  {  int yypos97= ctx->pos, yythunkpos97= ctx->thunkpos;  if (!yymatchChar(ctx, '>')) goto l97;  goto l96;
+  l97:;	  ctx->pos= yypos97; ctx->thunkpos= yythunkpos97;
+  }  yyDo(ctx, yy_20_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l96:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchString(ctx, "=>")) goto l98;  yyDo(ctx, yy_21_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l98:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, ':')) goto l99;
+  {  int yypos100= ctx->pos, yythunkpos100= ctx->thunkpos;  if (!yy_IDENT_START(ctx)) goto l100;  goto l99;
+  l100:;	  ctx->pos= yypos100; ctx->thunkpos= yythunkpos100;
+  }  yyDo(ctx, yy_22_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l99:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, ',')) goto l101;  yyDo(ctx, yy_23_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l101:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '.')) goto l102;  yyDo(ctx, yy_24_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l102:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '(')) goto l103;  yyDo(ctx, yy_25_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l103:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, ')')) goto l104;  yyDo(ctx, yy_26_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l104:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '{')) goto l105;  yyDo(ctx, yy_27_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l105:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '}')) goto l106;  yyDo(ctx, yy_28_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l106:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, '[')) goto l107;  yyDo(ctx, yy_29_Punctuation, ctx->begin, ctx->end);  goto l72;
+  l107:;	  ctx->pos= yypos72; ctx->thunkpos= yythunkpos72;  if (!yymatchChar(ctx, ']')) goto l71;  yyDo(ctx, yy_30_Punctuation, ctx->begin, ctx->end);
   }
-  l68:;	
+  l72:;	
   yyprintf((stderr, "  ok   %s @ %s\n", "Punctuation", ctx->buf+ctx->pos));
   return 1;
-  l67:;	  ctx->pos= yypos0; ctx->thunkpos= yythunkpos0;
+  l71:;	  ctx->pos= yypos0; ctx->thunkpos= yythunkpos0;
   yyprintf((stderr, "  fail %s @ %s\n", "Punctuation", ctx->buf+ctx->pos));
   return 0;
 }
 YY_RULE(int) yy_STRING(yycontext *ctx)
 {  int yypos0= ctx->pos, yythunkpos0= ctx->thunkpos;
-  yyprintf((stderr, "%s\n", "STRING"));  if (!yymatchClass(ctx, (unsigned char *)"\000\000\000\000\004\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")) goto l104;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_BEGIN)) goto l104;
-  l105:;	
-  {  int yypos106= ctx->pos, yythunkpos106= ctx->thunkpos;  if (!yy_STRING_CHAR(ctx)) goto l106;  goto l105;
-  l106:;	  ctx->pos= yypos106; ctx->thunkpos= yythunkpos106;
-  }  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_END)) goto l104;  if (!yymatchClass(ctx, (unsigned char *)"\000\000\000\000\004\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")) goto l104;
+  yyprintf((stderr, "%s\n", "STRING"));  if (!yymatchClass(ctx, (unsigned char *)"\000\000\000\000\004\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")) goto l108;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_BEGIN)) goto l108;
+  l109:;	
+  {  int yypos110= ctx->pos, yythunkpos110= ctx->thunkpos;  if (!yy_STRING_CHAR(ctx)) goto l110;  goto l109;
+  l110:;	  ctx->pos= yypos110; ctx->thunkpos= yythunkpos110;
+  }  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_END)) goto l108;  if (!yymatchClass(ctx, (unsigned char *)"\000\000\000\000\004\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")) goto l108;
   yyprintf((stderr, "  ok   %s @ %s\n", "STRING", ctx->buf+ctx->pos));
   return 1;
-  l104:;	  ctx->pos= yypos0; ctx->thunkpos= yythunkpos0;
+  l108:;	  ctx->pos= yypos0; ctx->thunkpos= yythunkpos0;
   yyprintf((stderr, "  fail %s @ %s\n", "STRING", ctx->buf+ctx->pos));
   return 0;
 }
 YY_RULE(int) yy_INTEGER(yycontext *ctx)
 {  int yypos0= ctx->pos, yythunkpos0= ctx->thunkpos;
   yyprintf((stderr, "%s\n", "INTEGER"));
-  {  int yypos108= ctx->pos, yythunkpos108= ctx->thunkpos;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_BEGIN)) goto l109;  if (!yymatchChar(ctx, '0')) goto l109;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_END)) goto l109;
-  {  int yypos110= ctx->pos, yythunkpos110= ctx->thunkpos;  if (!yymatchClass(ctx, (unsigned char *)"\000\000\000\000\000\000\000\000\000\000\000\000\004\200\000\001\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")) goto l110;  goto l109;
-  l110:;	  ctx->pos= yypos110; ctx->thunkpos= yythunkpos110;
-  }  goto l108;
-  l109:;	  ctx->pos= yypos108; ctx->thunkpos= yythunkpos108;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_BEGIN)) goto l111;  if (!yymatchClass(ctx, (unsigned char *)"\000\000\000\000\000\000\376\003\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")) goto l111;
-  l112:;	
-  {  int yypos113= ctx->pos, yythunkpos113= ctx->thunkpos;  if (!yymatchClass(ctx, (unsigned char *)"\000\000\000\000\000\000\377\003\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")) goto l113;  goto l112;
-  l113:;	  ctx->pos= yypos113; ctx->thunkpos= yythunkpos113;
-  }  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_END)) goto l111;  goto l108;
-  l111:;	  ctx->pos= yypos108; ctx->thunkpos= yythunkpos108;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_BEGIN)) goto l114;  if (!yymatchString(ctx, "0x")) goto l114;  if (!yy_HEX_DIGIT(ctx)) goto l114;
-  l115:;	
-  {  int yypos116= ctx->pos, yythunkpos116= ctx->thunkpos;  if (!yy_HEX_DIGIT(ctx)) goto l116;  goto l115;
-  l116:;	  ctx->pos= yypos116; ctx->thunkpos= yythunkpos116;
-  }  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_END)) goto l114;  goto l108;
-  l114:;	  ctx->pos= yypos108; ctx->thunkpos= yythunkpos108;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_BEGIN)) goto l117;  if (!yymatchString(ctx, "0o")) goto l117;  if (!yy_OCT_DIGIT(ctx)) goto l117;
-  l118:;	
-  {  int yypos119= ctx->pos, yythunkpos119= ctx->thunkpos;  if (!yy_OCT_DIGIT(ctx)) goto l119;  goto l118;
-  l119:;	  ctx->pos= yypos119; ctx->thunkpos= yythunkpos119;
-  }  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_END)) goto l117;  goto l108;
-  l117:;	  ctx->pos= yypos108; ctx->thunkpos= yythunkpos108;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_BEGIN)) goto l107;  if (!yymatchString(ctx, "0b")) goto l107;  if (!yy_BIN_DIGIT(ctx)) goto l107;
-  l120:;	
-  {  int yypos121= ctx->pos, yythunkpos121= ctx->thunkpos;  if (!yy_BIN_DIGIT(ctx)) goto l121;  goto l120;
-  l121:;	  ctx->pos= yypos121; ctx->thunkpos= yythunkpos121;
-  }  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_END)) goto l107;
+  {  int yypos112= ctx->pos, yythunkpos112= ctx->thunkpos;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_BEGIN)) goto l113;  if (!yymatchChar(ctx, '0')) goto l113;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_END)) goto l113;
+  {  int yypos114= ctx->pos, yythunkpos114= ctx->thunkpos;  if (!yymatchClass(ctx, (unsigned char *)"\000\000\000\000\000\000\000\000\000\000\000\000\004\200\000\001\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")) goto l114;  goto l113;
+  l114:;	  ctx->pos= yypos114; ctx->thunkpos= yythunkpos114;
+  }  goto l112;
+  l113:;	  ctx->pos= yypos112; ctx->thunkpos= yythunkpos112;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_BEGIN)) goto l115;  if (!yymatchClass(ctx, (unsigned char *)"\000\000\000\000\000\000\376\003\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")) goto l115;
+  l116:;	
+  {  int yypos117= ctx->pos, yythunkpos117= ctx->thunkpos;  if (!yymatchClass(ctx, (unsigned char *)"\000\000\000\000\000\000\377\003\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")) goto l117;  goto l116;
+  l117:;	  ctx->pos= yypos117; ctx->thunkpos= yythunkpos117;
+  }  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_END)) goto l115;  goto l112;
+  l115:;	  ctx->pos= yypos112; ctx->thunkpos= yythunkpos112;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_BEGIN)) goto l118;  if (!yymatchString(ctx, "0x")) goto l118;  if (!yy_HEX_DIGIT(ctx)) goto l118;
+  l119:;	
+  {  int yypos120= ctx->pos, yythunkpos120= ctx->thunkpos;  if (!yy_HEX_DIGIT(ctx)) goto l120;  goto l119;
+  l120:;	  ctx->pos= yypos120; ctx->thunkpos= yythunkpos120;
+  }  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_END)) goto l118;  goto l112;
+  l118:;	  ctx->pos= yypos112; ctx->thunkpos= yythunkpos112;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_BEGIN)) goto l121;  if (!yymatchString(ctx, "0o")) goto l121;  if (!yy_OCT_DIGIT(ctx)) goto l121;
+  l122:;	
+  {  int yypos123= ctx->pos, yythunkpos123= ctx->thunkpos;  if (!yy_OCT_DIGIT(ctx)) goto l123;  goto l122;
+  l123:;	  ctx->pos= yypos123; ctx->thunkpos= yythunkpos123;
+  }  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_END)) goto l121;  goto l112;
+  l121:;	  ctx->pos= yypos112; ctx->thunkpos= yythunkpos112;  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_BEGIN)) goto l111;  if (!yymatchString(ctx, "0b")) goto l111;  if (!yy_BIN_DIGIT(ctx)) goto l111;
+  l124:;	
+  {  int yypos125= ctx->pos, yythunkpos125= ctx->thunkpos;  if (!yy_BIN_DIGIT(ctx)) goto l125;  goto l124;
+  l125:;	  ctx->pos= yypos125; ctx->thunkpos= yythunkpos125;
+  }  yyText(ctx, ctx->begin, ctx->end);  if (!(YY_END)) goto l111;
   }
-  l108:;	
+  l112:;	
   yyprintf((stderr, "  ok   %s @ %s\n", "INTEGER", ctx->buf+ctx->pos));
   return 1;
-  l107:;	  ctx->pos= yypos0; ctx->thunkpos= yythunkpos0;
+  l111:;	  ctx->pos= yypos0; ctx->thunkpos= yythunkpos0;
   yyprintf((stderr, "  fail %s @ %s\n", "INTEGER", ctx->buf+ctx->pos));
   return 0;
 }
 YY_RULE(int) yy_Token(yycontext *ctx)
 {  int yypos0= ctx->pos, yythunkpos0= ctx->thunkpos;
   yyprintf((stderr, "%s\n", "Token"));
-  {  int yypos123= ctx->pos, yythunkpos123= ctx->thunkpos;  if (!yy_INTEGER(ctx)) goto l124;  yyDo(ctx, yy_1_Token, ctx->begin, ctx->end);  goto l123;
-  l124:;	  ctx->pos= yypos123; ctx->thunkpos= yythunkpos123;  if (!yy_STRING(ctx)) goto l125;  yyDo(ctx, yy_2_Token, ctx->begin, ctx->end);  goto l123;
-  l125:;	  ctx->pos= yypos123; ctx->thunkpos= yythunkpos123;  if (!yy_Punctuation(ctx)) goto l126;  goto l123;
-  l126:;	  ctx->pos= yypos123; ctx->thunkpos= yythunkpos123;  if (!yy_Keyword(ctx)) goto l127;  goto l123;
-  l127:;	  ctx->pos= yypos123; ctx->thunkpos= yythunkpos123;  if (!yy_SYMBOL(ctx)) goto l128;  yyDo(ctx, yy_3_Token, ctx->begin, ctx->end);  goto l123;
-  l128:;	  ctx->pos= yypos123; ctx->thunkpos= yythunkpos123;  if (!yy_IDENT(ctx)) goto l129;  yyDo(ctx, yy_4_Token, ctx->begin, ctx->end);  goto l123;
-  l129:;	  ctx->pos= yypos123; ctx->thunkpos= yythunkpos123;  if (!yy_WHITESPACE(ctx)) goto l130;  yyDo(ctx, yy_5_Token, ctx->begin, ctx->end);  goto l123;
-  l130:;	  ctx->pos= yypos123; ctx->thunkpos= yythunkpos123;  if (!yy_EOL(ctx)) goto l131;  yyDo(ctx, yy_6_Token, ctx->begin, ctx->end);  goto l123;
-  l131:;	  ctx->pos= yypos123; ctx->thunkpos= yythunkpos123;  if (!yy_EOF(ctx)) goto l122;  yyDo(ctx, yy_7_Token, ctx->begin, ctx->end);
+  {  int yypos127= ctx->pos, yythunkpos127= ctx->thunkpos;  if (!yy_INTEGER(ctx)) goto l128;  yyDo(ctx, yy_1_Token, ctx->begin, ctx->end);  goto l127;
+  l128:;	  ctx->pos= yypos127; ctx->thunkpos= yythunkpos127;  if (!yy_STRING(ctx)) goto l129;  yyDo(ctx, yy_2_Token, ctx->begin, ctx->end);  goto l127;
+  l129:;	  ctx->pos= yypos127; ctx->thunkpos= yythunkpos127;  if (!yy_Punctuation(ctx)) goto l130;  goto l127;
+  l130:;	  ctx->pos= yypos127; ctx->thunkpos= yythunkpos127;  if (!yy_Keyword(ctx)) goto l131;  goto l127;
+  l131:;	  ctx->pos= yypos127; ctx->thunkpos= yythunkpos127;  if (!yy_SYMBOL(ctx)) goto l132;  yyDo(ctx, yy_3_Token, ctx->begin, ctx->end);  goto l127;
+  l132:;	  ctx->pos= yypos127; ctx->thunkpos= yythunkpos127;  if (!yy_IDENT(ctx)) goto l133;  yyDo(ctx, yy_4_Token, ctx->begin, ctx->end);  goto l127;
+  l133:;	  ctx->pos= yypos127; ctx->thunkpos= yythunkpos127;  if (!yy_WHITESPACE(ctx)) goto l134;  yyDo(ctx, yy_5_Token, ctx->begin, ctx->end);  goto l127;
+  l134:;	  ctx->pos= yypos127; ctx->thunkpos= yythunkpos127;  if (!yy_EOL(ctx)) goto l135;  yyDo(ctx, yy_6_Token, ctx->begin, ctx->end);  goto l127;
+  l135:;	  ctx->pos= yypos127; ctx->thunkpos= yythunkpos127;  if (!yy_EOF(ctx)) goto l126;  yyDo(ctx, yy_7_Token, ctx->begin, ctx->end);
   }
-  l123:;	
+  l127:;	
   yyprintf((stderr, "  ok   %s @ %s\n", "Token", ctx->buf+ctx->pos));
   return 1;
-  l122:;	  ctx->pos= yypos0; ctx->thunkpos= yythunkpos0;
+  l126:;	  ctx->pos= yypos0; ctx->thunkpos= yythunkpos0;
   yyprintf((stderr, "  fail %s @ %s\n", "Token", ctx->buf+ctx->pos));
   return 0;
 }

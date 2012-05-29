@@ -10,6 +10,7 @@ static ast_node_t*          parse_statement(parser_t *p);
 static ast_node_t*          parse_if(parser_t *p);
 static ast_conditions_t*    parse_condition(parser_t *p);
 static ast_node_t*          parse_while(parser_t *p);
+static ast_node_t*          parse_for(parser_t *p);
 static ast_node_t*          parse_pass(parser_t *p);
 static ast_node_t*          parse_return(parser_t *p);
 static ast_node_t*          parse_named_function_def(parser_t *p);
@@ -152,6 +153,8 @@ ast_node_t* parse_statement(parser_t *p) {
         return parse_if(p);
     } else if (CURR() == T_WHILE) {
         return parse_while(p);
+    } else if (CURR() == T_FOR) {
+        return parse_for(p);
     } else if (CURR() == T_PASS) {
         return parse_pass(p);
     } else if (CURR() == T_RETURN) {
@@ -209,6 +212,39 @@ ast_node_t* parse_while(parser_t *p) {
     BLOCK_PRELUDE();
     PARSE_CHILD(ast_statements_t, body, statement_block);
     return AST_MAKE(while, condition, body);
+}
+
+ast_node_t* parse_for(parser_t *p) {
+    ACCEPT(T_FOR, "expected `for`");
+    SKIP();
+    
+    if (CURR() != T_IDENT) {
+        ACCEPT(T_IDENT, "expected ident");
+    }
+    
+    INTERN kv = 0, vv = string_to_intern(CTX, TEXT);
+    NEXT();
+    SKIP();
+    
+    if (CURR() == T_COMMA) {
+        NEXT();
+        SKIP();
+        if (CURR() != T_IDENT) {
+            ACCEPT(T_IDENT, "expected ident");
+        }
+        kv = vv;
+        vv = string_to_intern(CTX, TEXT);
+        NEXT();
+        SKIP();
+    }
+    
+    ACCEPT(T_IN, "expected `in`");
+    SKIP();
+    
+    PARSE_CHILD(ast_node_t, exp, expression);
+    BLOCK_PRELUDE();
+    PARSE_CHILD(ast_statements_t, body, statement_block);
+    return AST_MAKE(for, kv, vv, exp, body);
 }
 
 ast_node_t* parse_pass(parser_t *p) {

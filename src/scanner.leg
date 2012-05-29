@@ -87,6 +87,8 @@ Keyword         = 'def'     !IDENT_REST             { $$ = T_DEF }
                 | 'and'     !IDENT_REST             { $$ = T_AND }
                 | 'or'      !IDENT_REST             { $$ = T_OR }
                 | 'not'     !IDENT_REST             { $$ = T_NOT }
+                | 'for'     !IDENT_REST             { $$ = T_FOR }
+                | 'in'      !IDENT_REST             { $$ = T_IN }
 
 SYMBOL          = ':' < IDENT_START IDENT_REST* IDENT_TAIL? >
 IDENT           = < IDENT_START IDENT_REST* IDENT_TAIL? >
