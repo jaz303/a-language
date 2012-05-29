@@ -88,8 +88,8 @@ Keyword         = 'def'     !IDENT_REST             { $$ = T_DEF }
                 | 'or'      !IDENT_REST             { $$ = T_OR }
                 | 'not'     !IDENT_REST             { $$ = T_NOT }
 
-SYMBOL          = ':' < IDENT_START IDENT_REST* >
-IDENT           = < IDENT_START IDENT_REST* >
+SYMBOL          = ':' < IDENT_START IDENT_REST* IDENT_TAIL? >
+IDENT           = < IDENT_START IDENT_REST* IDENT_TAIL? >
 
 WHITESPACE      = < ( ' ' | '\t' ) + >
 EOL             = '\r\n' | '\n' | '\r'
@@ -103,6 +103,7 @@ OCT_DIGIT       = [0-7]
 BIN_DIGIT       = [01]
 IDENT_START     = [a-zA-Z_]
 IDENT_REST      = [a-zA-Z0-9_]
+IDENT_TAIL      = '!' | '?'
 
 NON_PRINTABLE   = [\000-\037] | '\177'
 ESCAPE          = '\\' [rnftb'"\\]
