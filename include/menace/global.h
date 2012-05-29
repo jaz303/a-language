@@ -278,6 +278,9 @@ typedef enum {
     AST_FUNCTION,
     AST_UNARY_EXP,
     AST_BINARY_EXP,
+    AST_SELECTOR,
+    AST_INVOKE,
+    AST_INDEX
 } ast_node_type_t;
 
 #define AST_LITERAL_MAX AST_LITERAL_SYMBOL
@@ -302,6 +305,9 @@ typedef struct ast_pass                     ast_pass_t;
 typedef struct ast_assign                   ast_assign_t;
 typedef struct ast_return                   ast_return_t;
 typedef struct ast_function                 ast_function_t;
+typedef struct ast_selector                 ast_selector_t;
+typedef struct ast_invoke                   ast_invoke_t;
+typedef struct ast_index                    ast_index_t;
 
 /* AST support types */
 
@@ -399,12 +405,44 @@ struct ast_return {
     ast_node_t              *exp;
 };
 
+/* named function definition */
 struct ast_function {
     ast_node_type_t         type;
     INTERN                  name;
     int                     arity;
     ast_parameters_t        *parameters;
     ast_statements_t        *body;
+};
+
+/* property access:
+ * foo.bar
+ */
+struct ast_selector {
+    ast_node_type_t         type;
+    ast_node_t              *receiver;
+    INTERN                  name;
+};
+
+/* method/function invoke:
+ * foo.bar(a, b, c)         : receiver == foo, name = bar
+ * (a).bar(a, b, c)         : receiver == (a), name = bar
+ * bar()                    : receiver == NULL, name = bar
+ */
+struct ast_invoke {
+    ast_node_type_t         type;
+    ast_node_t              *receiver;
+    INTERN                  name;
+    ast_expressions_t       *arguments;
+};
+
+/* array indexing:
+ * bar[0]
+ * foo[1,2,3]
+ */
+struct ast_index {
+    ast_node_type_t         type;
+    ast_node_t              *receiver;
+    ast_expressions_t       *arguments;
 };
 
 /* 

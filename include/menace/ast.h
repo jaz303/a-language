@@ -39,5 +39,8 @@ ast_dict_members_t*     ast_mk_dict_members(context_t *ctx, ast_node_t *key, ast
 void                    ast_cons_dict_members(ast_dict_members_t *mem, ast_dict_members_t *cons);
 ast_expressions_t*      ast_mk_expressions(context_t *ctx, ast_node_t *exp);
 void                    ast_cons_expressions(ast_expressions_t* exp, ast_expressions_t* cons);
+ast_node_t*             ast_mk_selector(context_t *ctx, ast_node_t *receiver, INTERN name);
+ast_node_t*             ast_mk_invoke(context_t *ctx, ast_node_t *receiver, INTERN name, ast_expressions_t *args);
+ast_node_t*             ast_mk_index(context_t *ctx, ast_node_t *receiver, ast_expressions_t *args);
 
 #endif

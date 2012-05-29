@@ -252,3 +252,25 @@ ast_expressions_t* ast_mk_expressions(context_t *ctx, ast_node_t *exp) {
 void ast_cons_expressions(ast_expressions_t* exp, ast_expressions_t* cons) {
     exp->next = cons;
 }
+
+ast_node_t* ast_mk_selector(context_t *ctx, ast_node_t *receiver, INTERN name) {
+    NODE(ast_selector_t, AST_SELECTOR);
+    node->receiver = receiver;
+    node->name = name;
+    return (ast_node_t*) node;
+}
+
+ast_node_t* ast_mk_invoke(context_t *ctx, ast_node_t *receiver, INTERN name, ast_expressions_t *args) {
+    NODE(ast_invoke_t, AST_INVOKE);
+    node->receiver = receiver;
+    node->name = name;
+    node->arguments = args;
+    return (ast_node_t*) node;
+}
+
+ast_node_t* ast_mk_index(context_t *ctx, ast_node_t *receiver, ast_expressions_t *args) {
+    NODE(ast_index_t, AST_INDEX);
+    node->receiver = receiver;
+    node->arguments = args;
+    return (ast_node_t*) node;
+}

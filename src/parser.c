@@ -26,10 +26,10 @@ static ast_node_t*          parse_multiplicative_exp(parser_t *p);
 static ast_node_t*          parse_arithmetic_unary_exp(parser_t *p);
 static ast_node_t*          parse_other_unary_exp(parser_t *p);
 static ast_node_t*          parse_primary(parser_t *p);
-static ast_node_t*          parse_selector(parser_t *p);
 static ast_node_t*          parse_value(parser_t *p);
 static ast_node_t*          parse_array(parser_t *p);
 static ast_node_t*          parse_dict(parser_t *p);
+static ast_expressions_t*   parse_delimited_expression_list(parser_t *p);
 static ast_expressions_t*   parse_expression_list(parser_t *p);
 
 #define NEXT() \
@@ -401,81 +401,75 @@ ast_node_t* parse_arithmetic_unary_exp(parser_t *p) {
 }
 
 ast_node_t* parse_other_unary_exp(parser_t *p) {
-    if (CURR() == T_BANG || CURR() == T_TILDE) {
+    if (CURR() == T_BANG || CURR() == T_TILDE || CURR() == T_NOT) {
         SAVE_OP();
-        op = (op == T_BANG) ? T_L_NOT : T_B_NOT;
+        op = (op == T_TILDE) ? T_B_NOT : T_L_NOT;
         PARSE_CHILD(ast_node_t, exp, other_unary_exp);
         return AST_MAKE(unary_exp, op, exp);
     } else {
         PARSE_CHILD(ast_node_t, primary, primary);
-        if (CURR() == T_DOT || CURR() == T_L_BRACKET) {
-            return parse_selector(p);
-        }
         return primary;
     }
 }
 
 ast_node_t* parse_primary(parser_t *p) {
+    ast_node_t *out = NULL;
+    
     if (CURR() == T_L_PAREN) {
         NEXT();
         SKIP();
         PARSE_CHILD(ast_node_t, exp, expression);
         SKIP();
         ACCEPT(T_R_PAREN, "expected `)`");
-        return exp;
+        out = exp;
+    } else if (CURR() == T_L_BRACKET) {
+        PARSE_CHILD(ast_node_t, ary, array);
+        out = ary;
+    } else if (CURR() == T_L_BRACE) {
+        PARSE_CHILD(ast_node_t, dict, dict);
+        out = dict;
     } else if (CURR() == T_IDENT) {
-        ast_node_t *ident = AST_MAKE(ident, string_to_intern(CTX, TEXT));
-        NEXT();
-        return ident;
-    } else {
-        return parse_value(p);
-    }
-}
-
-ast_node_t* parse_selector(parser_t *p) {
-    if (CURR() == T_DOT) {
-        NEXT();
-        if (CURR() != T_IDENT) {
-            ACCEPT(T_IDENT, "expected identifier");
-        }
         INTERN name = string_to_intern(CTX, TEXT);
-        (void)name;
         NEXT();
         if (CURR() == T_L_PAREN) {
-            ast_expressions_t *args = NULL;
-            NEXT();
-            SKIP();
-            if (CURR() == T_R_PAREN) {
-                NEXT();
-            } else {
-                args = parse_expression_list(p);
-                ERROR_CHECK();
-                SKIP();
-                ACCEPT(T_R_PAREN, "expected `)`");
-            }
-            // TODO: return method call
+            PARSE_CHILD(ast_expressions_t, args, delimited_expression_list);
+            out = AST_MAKE(invoke, NULL, name, args);
         } else {
-            // TODO: return property access
+            out = AST_MAKE(ident, name);
         }
-        return NULL;
-    } else if (CURR() == T_L_BRACKET) {
-        ast_expressions_t *args = NULL;
-        NEXT();
-        SKIP();
-        if (CURR() == T_R_BRACKET) {
-            NEXT();
-        } else {
-            args = parse_expression_list(p);
-            ERROR_CHECK();
-            SKIP();
-            ACCEPT(T_R_BRACKET, "expected `]`");
-        }
-        // TODO: return indexing
-        return NULL;
     } else {
-        ERROR("expected selector (property access, method call or index)")
+        out = parse_value(p);
+        goto done;
     }
-    return NULL;
+    
+    /* we've parse either an ident, receiverless function call, array,
+     * dict, or paren'd expr. there can now be an arbitrary chain of
+     * indexing/selection/method calls
+     */
+     
+    while (CURR() == T_DOT || CURR() == T_L_BRACKET) {
+        if (CURR() == T_DOT) {
+            NEXT();
+            if (CURR() != T_IDENT) {
+                ACCEPT(T_IDENT, "expected identifier");
+            }
+            INTERN selector_name = string_to_intern(CTX, TEXT);
+            NEXT();
+            if (CURR() == T_L_PAREN) {
+                PARSE_CHILD(ast_expressions_t, args, delimited_expression_list);
+                out = AST_MAKE(invoke, out, selector_name, args);
+            } else {
+                out = AST_MAKE(selector, out, selector_name);
+            }
+        } else {
+            PARSE_CHILD(ast_expressions_t, args, delimited_expression_list);
+            out = AST_MAKE(index, out, args);
+        }
+    }
+    
+done:
+    return out;
+    
 }
 
 ast_node_t* parse_value(parser_t *p) {
@@ -498,10 +492,6 @@ ast_node_t* parse_value(parser_t *p) {
     } else if (CURR() == T_FALSE) {
         NEXT();
         return AST_MAKE(false);
-    } else if (CURR() == T_L_BRACKET) {
-        return parse_array(p);
-    } else if (CURR() == T_L_BRACE) {
-        return parse_dict(p);
     } else {
         ERROR("expected value");
     }
@@ -571,6 +561,38 @@ ast_node_t* parse_dict(parser_t *p) {
         ACCEPT(T_R_BRACE, "expected `}`");
         return AST_MAKE(dict, head);
     }    
+}
+
+ast_expressions_t* parse_delimited_expression_list(parser_t *p) {
+    
+    token_t right;
+    if (CURR() == T_L_PAREN) {
+        right = T_R_PAREN;
+    } else if (CURR() == T_L_BRACKET) {
+        right = T_R_BRACKET;
+    } else {
+        ERROR("expected expression delimited by `[]` or `()`");
+    }
+    
+    NEXT();
+    SKIP();
+    
+    if (CURR() == right) {
+        NEXT();
+        return NULL;
+    }
+    
+    PARSE_CHILD(ast_expressions_t, exps, expression_list);
+    SKIP();
+    
+    if (right == T_R_PAREN) {
+        ACCEPT(T_R_PAREN, "expected `)`");
+    } else {
+        ACCEPT(T_R_BRACKET, "expected `]`");
+    }
+    
+    return exps;
+    
 }
 
 ast_expressions_t* parse_expression_list(parser_t *p) {

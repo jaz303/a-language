@@ -1,10 +1,20 @@
 #include "menace/global.h"
 #include "menace/intern.h"
 
-#define INDENT() for (int i = 0; i < indent; i++) { fputs("    ", stream); }
-
 static void do_pretty_print_statements(context_t *ctx, ast_statements_t *stmts, FILE *stream, int indent);
 static void do_pretty_print_exp(context_t *ctx, ast_node_t *node, FILE *stream);
+static void do_pretty_print_exp_list(context_t *ctx, ast_expressions_t *exps, FILE *stream);
+
+/* Public API */
+
+void pretty_print(context_t *ctx, ast_statements_t *stmts, FILE *stream) {
+    do_pretty_print_statements(ctx, stmts, stream, 0);
+    fputc('\n', stream);
+}
+
+/* Private */
+
+#define INDENT() for (int i = 0; i < indent; i++) { fputs("    ", stream); }
 
 static void do_pretty_print_statements(context_t *ctx, ast_statements_t *stmts, FILE *stream, int indent) {
     while (stmts) {
@@ -203,6 +213,44 @@ static void do_pretty_print_exp(context_t *ctx, ast_node_t *node, FILE *stream) 
             
             break;
         }
+        case AST_SELECTOR:
+        {
+            ast_selector_t *s = (ast_selector_t*)node;
+            
+            do_pretty_print_exp(ctx, s->receiver, stream);
+            fputc('.', stream);
+            fputs(intern_to_string(ctx, s->name),stream);
+            
+            break;
+        }
+        case AST_INVOKE:
+        {
+            ast_invoke_t *i = (ast_invoke_t*)node;
+            
+            if (i->receiver) {
+                do_pretty_print_exp(ctx, i->receiver, stream);
+                fputc('.', stream);
+            }
+            
+            fputs(intern_to_string(ctx, i->name),stream);
+            fputc('(', stream);
+            do_pretty_print_exp_list(ctx, i->arguments, stream);
+            fputc(')', stream);
+            
+            break;
+        }
+        case AST_INDEX:
+        {
+            ast_index_t *i = (ast_index_t*)node;
+            
+            do_pretty_print_exp(ctx, i->receiver, stream);
+            fputc('[', stream);
+            do_pretty_print_exp_list(ctx, i->arguments, stream);
+            fputc(']', stream);
+            
+            break;
+        }
+        
         case AST_WHILE:
         case AST_ASSIGN:
         case AST_IF:
@@ -215,7 +263,11 @@ static void do_pretty_print_exp(context_t *ctx, ast_node_t *node, FILE *stream) 
     }
 }
 
-void pretty_print(context_t *ctx, ast_statements_t *stmts, FILE *stream) {
-    do_pretty_print_statements(ctx, stmts, stream, 0);
-    fputc('\n', stream);
+static void do_pretty_print_exp_list(context_t *ctx, ast_expressions_t *exps, FILE *stream) {
+    int ix = 0;
+    while (exps) {
+        if (ix++) fputs(", ", stream);
+        do_pretty_print_exp(ctx, exps->exp, stream);
+        exps = exps->next;
+    }
 }
