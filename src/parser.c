@@ -111,6 +111,29 @@ static INT decode_integer(const char *str) {
 }
 
 static char* decode_string(char *str) {
+    char *read = str, *write = str;
+    while (*read) {
+        if (*read == '\\') {
+            read++;
+            switch (*read) {
+                case 'r':   *write = '\r'; break;
+                case 'n':   *write = '\n'; break;
+                case 'f':   *write = '\f'; break;
+                case 't':   *write = '\t'; break;
+                case 'b':   *write = '\b'; break;
+                case '\'':  *write = '\''; break;
+                case '\\':  *write = '\\'; break;
+                case '"':   *write = '"' ; break;
+                default:
+                    return NULL  ; /* crash boom bang */
+            }
+        } else {
+            *write = *read;
+        }
+        read++;
+        write++;
+    }
+    *write = '\0';
     return str;
 }
 
@@ -515,9 +538,9 @@ ast_node_t* parse_value(parser_t *p) {
         return AST_MAKE(integer, val);
     } else if (CURR() == T_STRING) {
         char *str = decode_string(TEXT);
-        // TODO: no, this string will get clobbered when NEXT() runs
+        ast_node_t *str_node = AST_MAKE(string, str);
         NEXT();
-        return AST_MAKE(string, str);
+        return str_node;
     } else if (CURR() == T_SYMBOL) {
         INTERN name = string_to_intern(CTX, TEXT);
         NEXT();

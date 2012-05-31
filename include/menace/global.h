@@ -267,6 +267,7 @@ typedef struct {
 
 typedef enum {
     AST_LITERAL,
+    AST_STRING,
     AST_IDENT,
     AST_ARRAY,
     AST_DICT,
@@ -296,6 +297,7 @@ typedef struct ast_parameters               ast_parameters_t;
 typedef struct ast_array_members            ast_array_members_t;
 typedef struct ast_dict_members             ast_dict_members_t;
 typedef struct ast_literal                  ast_literal_t;
+typedef struct ast_string                   ast_string_t;
 typedef struct ast_ident                    ast_ident_t;
 typedef struct ast_literal_collection       ast_literal_collection_t;
 typedef struct ast_unary_exp                ast_unary_exp_t;
@@ -354,6 +356,11 @@ struct ast_dict_members {
 struct ast_literal {
     ast_node_type_t         type;
     VALUE                   value;
+};
+
+struct ast_string {
+    ast_node_type_t         type;
+    INTERN                  string;
 };
 
 struct ast_ident {

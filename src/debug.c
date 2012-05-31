@@ -173,6 +173,32 @@ static void do_pretty_print_exp(context_t *ctx, ast_node_t *node, FILE *stream) 
             
             break;
         }
+        case AST_STRING:
+        {
+            ast_string_t *s = (ast_string_t*)node;
+            
+            fputc('"', stream);
+            
+            const char *str = intern_to_string(ctx, s->string);
+            while (*str) {
+                switch (*str) {
+                    case '\r':      fputs("\\r", stream); break;
+                    case '\n':      fputs("\\n", stream); break;
+                    case '\f':      fputs("\\f", stream); break;
+                    case '\t':      fputs("\\t", stream); break;
+                    case '\b':      fputs("\\b", stream); break;
+                    case '\'':      fputs("\\'", stream); break;
+                    case '"':       fputs("\\\"", stream); break;
+                    case '\\':      fputs("\\\\", stream); break;
+                    default:        fputc(*str, stream); break;
+                }
+                str++;
+            }
+            
+            fputc('"', stream);
+            
+            break;
+        }
         case AST_ARRAY:
         {
             ast_literal_collection_t *a = (ast_literal_collection_t*)node;
@@ -266,6 +292,7 @@ static void do_pretty_print_exp(context_t *ctx, ast_node_t *node, FILE *stream) 
             break;
         }
         
+        /* statement nodes; these should never make it into this function */
         case AST_FOR:
         case AST_WHILE:
         case AST_ASSIGN:

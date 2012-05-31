@@ -1,4 +1,5 @@
 #include "menace/ast.h"
+#include "menace/intern.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -185,7 +186,9 @@ ast_node_t* ast_mk_integer(context_t *ctx, INT val) {
 }
 
 ast_node_t* ast_mk_string(context_t *ctx, const char *str) {
-    return NULL;
+    NODE(ast_string_t, AST_STRING);
+    node->string = string_to_intern(ctx, str);
+    return (ast_node_t*) node;
 }
 
 ast_node_t* ast_mk_symbol(context_t *ctx, INTERN name) {
