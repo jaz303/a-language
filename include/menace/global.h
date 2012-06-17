@@ -160,11 +160,24 @@ typedef struct obj_function {
     /* AST? */
 } obj_function_t;
 
+typedef VALUE (*native_fn_f)(context_t *ctx,
+                             VALUE receiver,
+                             VALUE *args,
+                             int nargs,
+                             VALUE *exception,
+                             void *userdata);
+
+typedef struct obj_native_function {
+    obj_t           obj;
+    INTERN          name;
+    native_fn_f     fn;
+    void            *userdata;
+} obj_native_function_t;
+
 /*
  * Primitive types - gnarly
  */
-
-typedef int32_t INTEGER;
+ 
 typedef uint32_t COLOR;
 
 /*

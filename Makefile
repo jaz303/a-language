@@ -9,6 +9,7 @@ BUILD_DIR	=	build
 SCANNER		=	src/scanner.c
 
 OBJECTS		=	src/ast.o \
+				src/context.o \
 				src/debug.o \
 				src/global.o \
 				src/hash.o \
