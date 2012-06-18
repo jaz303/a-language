@@ -3,6 +3,12 @@
 
 #include "menace/global.h"
 
+#define MNC_ARRAY_ITERATE(array, itervar, valvar) \
+    for (int itervar = 0; itervar < ((obj_array_t*)array)->length; ++itervar) { \
+        VALUE valvar = ((obj_array_t*)array)->values[itervar];
+        
+#define MNC_ARRAY_ITERATE_END \
+    }
 
 void            array_init(context_t *ctx, obj_array_t *ary);
 void            array_init_with_capacity(context_t *ctx, obj_array_t *ary, UINT capacity);
