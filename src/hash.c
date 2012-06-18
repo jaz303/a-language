@@ -334,19 +334,17 @@ hash_int_t symbol_table_size(symbol_table_t *hsh) {
     return h->size;
 }
 
-dict_t* dict_create(context_t *ctx) {
-    hash_t *hsh = malloc(sizeof(hash_t));
-    if (hsh) hash_init(hsh, HASH_DICT);
-    return (symbol_table_t*)hsh;
-}
+/*
+ * Dictionary
+ */
 
 void dict_init(dict_t *hsh) {
     hash_init((hash_t*)hsh, HASH_DICT);
 }
 
-void dict_destroy(dict_t *hsh) {
-    HASH_CAST(hsh);
-    (void)h;
+void dict_cleanup(dict_t *hsh) {
+    if (hsh->flags)     free(hsh->flags);
+    if (hsh->buckets)   free(hsh->buckets);
 }
 
 int dict_contains(dict_t *hsh, VALUE key) {
