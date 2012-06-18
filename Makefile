@@ -8,9 +8,12 @@ LDFLAGS		=
 BUILD_DIR	=	build
 SCANNER		=	src/scanner.c
 
-OBJECTS		=	src/ast.o \
+OBJECTS		=	src/array.o \
+				src/ast.o \
+				src/builtin_types.o \
 				src/context.o \
 				src/debug.o \
+				src/gc.o \
 				src/global.o \
 				src/hash.o \
 				src/intern.o \
