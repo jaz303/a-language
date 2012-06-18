@@ -52,9 +52,8 @@ void                symbol_table_put(symbol_table_t *hsh, INTERN sym, VALUE val)
 VALUE               symbol_table_delete(symbol_table_t *hsh, INTERN sym);
 hash_int_t          symbol_table_size(symbol_table_t *hsh);
 
-dict_t*             dict_create(context_t *ctx);
 void                dict_init(dict_t *hsh);
-void                dict_destroy(dict_t *hsh);
+void                dict_cleanup(dict_t *hsh);
 VALUE               dict_get(dict_t *hsh, VALUE key);
 void                dict_put(dict_t *hsh, VALUE key, VALUE val);
 VALUE               dict_delete(dict_t *hsh, VALUE key);
