@@ -86,6 +86,55 @@ typedef float REAL;
 #define MTEST(v)                    ((v != kFalse) && (v != kNull))
 
 /*
+ * Hash table
+ */
+ 
+#ifdef _LP64
+    typedef uint64_t    hash_int_t;
+#else
+    typedef uint32_t    hash_int_t;
+#endif
+
+typedef hash_int_t hash_iter_t;
+ 
+typedef union {
+    VALUE           value;
+    INTERN          symbol;
+    const char*     string;
+} hash_key_t;
+
+typedef union {
+    VALUE           value;
+    INTERN          symbol;
+} hash_value_t;
+
+typedef struct hash_node hash_node_t;
+struct hash_node {
+    hash_key_t      key;
+    hash_value_t    value;
+};
+
+typedef enum {
+    HASH_SYMBOL_TABLE,                      /* INTERN   => VALUE    */
+    HASH_INTERN_TABLE,                      /* cstring  => INTERN   */
+    HASH_DICT                               /* VALUE    => VALUE    */
+} hash_type_t;
+
+typedef struct {
+    hash_type_t         type;               /* type of hash table */
+    hash_int_t          n_buckets;          /* # of buckets allocated */
+    hash_int_t          n_occupied;         /* # of occupied buckets (i.e. full or deleted) */
+    hash_int_t          upper_bound;        /* threshold of occupied buckets at which we will resize */
+    hash_int_t          size;               /* # of K/V pairs in the hash (i.e. full buckets) */
+    unsigned char       *flags;             /* auxiliary packed flag array for tracking bucket states */
+    hash_node_t         *buckets;           /* the buckets */
+} hash_t;
+
+typedef hash_t symbol_table_t;
+typedef hash_t intern_table_t;
+typedef hash_t dict_t;
+
+/*
  * VM instruction type
  */
  
@@ -174,56 +223,6 @@ typedef struct obj_native_function {
  */
  
 typedef uint32_t COLOR;
-
-/*
- * Hash table
- */
- 
-#ifdef _LP64
-    typedef uint64_t    hash_int_t;
-#else
-    typedef uint32_t    hash_int_t;
-#endif
-
-typedef hash_int_t hash_iter_t;
- 
-typedef union {
-    VALUE           value;
-    INTERN          symbol;
-    const char*     string;
-} hash_key_t;
-
-typedef union {
-    VALUE           value;
-    INTERN          symbol;
-} hash_value_t;
-
-typedef struct hash_node hash_node_t;
-struct hash_node {
-    hash_key_t      key;
-    hash_value_t    value;
-};
-
-typedef enum {
-    HASH_SYMBOL_TABLE,                      /* INTERN   => VALUE    */
-    HASH_INTERN_TABLE,                      /* cstring  => INTERN   */
-    HASH_DICT                               /* VALUE    => VALUE    */
-} hash_type_t;
-
-typedef struct {
-    hash_type_t         type;               /* type of hash table */
-    hash_int_t          n_buckets;          /* # of buckets allocated */
-    hash_int_t          n_occupied;         /* # of occupied buckets (i.e. full or deleted) */
-    hash_int_t          upper_bound;        /* threshold of occupied buckets at which we will resize */
-    hash_int_t          size;               /* # of K/V pairs in the hash (i.e. full buckets) */
-    unsigned char       *flags;             /* auxiliary packed flag array for tracking bucket states */
-    hash_node_t         *buckets;           /* the buckets */
-    void                *userdata;          /* not used at present */
-} hash_t;
-
-typedef hash_t symbol_table_t;
-typedef hash_t intern_table_t;
-typedef hash_t dict_t;
 
 /*
  * Intern wrapper struct
