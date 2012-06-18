@@ -70,8 +70,7 @@ void display_usage(int extended) {
         printf( "  -h, --help       display this message\n"
                 "  -c               syntax check only\n"
                 "  --pretty-print   parse programfile and pretty print to stdout\n"
-                "  -v, --verbose    be verbose\n"
-            );
+                "  -v, --verbose    be verbose\n" );
     }
 }
 
