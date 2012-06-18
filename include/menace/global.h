@@ -116,7 +116,7 @@ typedef float REAL;
 #define VALUE_IS_OBJECT(v)          (IS_OBJECT(v) && OBJ_IS_OBJECT(v))
 #define VALUE_IS_REGEXP(v)          (IS_OBJECT(v) && OBJ_IS_REGEXP(v))
 
-#define VALUE_IS_TRUTHY(v)          ((v != kFalse) && (v != kNull))
+#define MTEST(v)                    ((v != kFalse) && (v != kNull))
 
 /*
  * VM instruction type

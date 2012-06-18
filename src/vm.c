@@ -138,7 +138,7 @@ void vm_exec() {
     {
         INT delta = TAKE_INT();
         VALUE cond = POP();
-        if (VALUE_IS_TRUTHY(cond)) {
+        if (MTEST(cond)) {
             inst_ptr += delta;
         }
         NEXT();
@@ -147,7 +147,7 @@ void vm_exec() {
     {
         INT delta = TAKE_INT();
         VALUE cond = POP();
-        if (!VALUE_IS_TRUTHY(cond)) {
+        if (!MTEST(cond)) {
             inst_ptr += delta;
         }
         NEXT();
