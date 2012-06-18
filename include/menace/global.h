@@ -18,27 +18,6 @@ typedef struct context context_t;
 /*
  * Object types
  */
- 
-typedef enum {
-    INTEGER_T           = 1,
-    BOOLEAN_T,
-    SYMBOL_T,
-    NULL_T,
-    
-    FLOAT_T,
-    
-    STRING_T,
-    FUNCTION_T,
-    NATIVE_FUNCTION_T,
-    OPAQUE_T,
-    DATE_T,
-    MONEY_T,
-    COLOR_T,
-    ARRAY_T,
-    DICT_T,
-    OBJECT_T,
-    REGEXP_T
-} obj_type_t;
 
 #ifdef _LP64
 	typedef void*       VALUE;
@@ -86,35 +65,23 @@ typedef float REAL;
 #define AS_OBJECT(v)                ((obj_t*)v)
 #define IS_OBJECT(v)                (VALUE_IS_PTR(v))
 
-#define OBJ_IS_FLOAT(v)             (AS_OBJECT(v)->type == FLOAT_T)
-#define OBJ_IS_COLOR(v)             (AS_OBJECT(v)->type == COLOR_T)
-#define OBJ_IS_STRING(v)            (AS_OBJECT(v)->type == STRING_T)
-#define OBJ_IS_FUNCTION(v)          (AS_OBJECT(v)->type == FUNCTION_T)
-#define OBJ_IS_NATIVE_FUNCTION(v)   (AS_OBJECT(v)->type == NATIVE_FUNCTION_T)
-#define OBJ_IS_OPAQUE(v)            (AS_OBJECT(v)->type == OPAQUE_T)
-#define OBJ_IS_DATE(v)              (AS_OBJECT(v)->type == DATE_T)
-#define OBJ_IS_MONEY(v)             (AS_OBJECT(v)->type == MONEY_T)
-#define OBJ_IS_ARRAY(v)             (AS_OBJECT(v)->type == ARRAY_T)
-#define OBJ_IS_DICT(v)              (AS_OBJECT(v)->type == DICT_T)
-#define OBJ_IS_OBJECT(v)            (AS_OBJECT(v)->type == OBJECT_T)
-#define OBJ_IS_REGEXP(v)            (AS_OBJECT(v)->type == REGEXP_T)
+#define OBJ_IS_FLOAT(v)             (AS_OBJECT(v)->meta == &Float)
+#define OBJ_IS_STRING(v)            (AS_OBJECT(v)->meta == &String)
+#define OBJ_IS_FUNCTION(v)          (AS_OBJECT(v)->meta == &Function)
+#define OBJ_IS_NATIVE_FUNCTION(v)   (AS_OBJECT(v)->meta == &NativeFunction)
+#define OBJ_IS_ARRAY(v)             (AS_OBJECT(v)->meta == &Array)
+#define OBJ_IS_DICT(v)              (AS_OBJECT(v)->meta == &Dict)
 
 #define VALUE_IS_PTR(v)             (((INT)v & 0x03) == 0)
 #define VALUE_IS_INT(v)             (((INT)v & 0x01) == 0x01)
 #define VALUE_IS_BOOL(v)            ((((INT)v) & 0x06) == 0x06)
 #define VALUE_IS_SYMBOL(v)          ((((INT)v) & 0x0A) == 0x0A)
 #define VALUE_IS_FLOAT(v)           (IS_OBJECT(v) && OBJ_IS_FLOAT(v))
-#define VALUE_IS_COLOR(v)           (IS_OBJECT(v) && OBJ_IS_COLOR(v))
 #define VALUE_IS_STRING(v)          (IS_OBJECT(v) && OBJ_IS_STRING(v))
 #define VALUE_IS_FUNCTION(v)        (IS_OBJECT(v) && OBJ_IS_FUNCTION(v))
 #define VALUE_IS_NATIVE_FUNCTION(v) (IS_OBJECT(v) && OBJ_IS_NATIVE_FUNCTION(v))
-#define VALUE_IS_OPAQUE(v)          (IS_OBJECT(v) && OBJ_IS_OPAQUE(v))
-#define VALUE_IS_DATE(v)            (IS_OBJECT(v) && OBJ_IS_DATE(v))
-#define VALUE_IS_MONEY(v)           (IS_OBJECT(v) && OBJ_IS_MONEY(v))
 #define VALUE_IS_ARRAY(v)           (IS_OBJECT(v) && OBJ_IS_ARRAY(v))
 #define VALUE_IS_DICT(v)            (IS_OBJECT(v) && OBJ_IS_DICT(v))
-#define VALUE_IS_OBJECT(v)          (IS_OBJECT(v) && OBJ_IS_OBJECT(v))
-#define VALUE_IS_REGEXP(v)          (IS_OBJECT(v) && OBJ_IS_REGEXP(v))
 
 #define MTEST(v)                    ((v != kFalse) && (v != kNull))
 
@@ -132,20 +99,34 @@ typedef union {
 /*
  * Object types
  */
+typedef struct obj obj_t;
  
 typedef struct gc_header {
     char _;
 } gc_header_t;
 
-typedef struct obj {
+struct obj {
     gc_header_t     gc;
-    obj_type_t      type;
-} obj_t;
+    meta_t          *meta;
+};
+
+extern meta_t Float;
+extern meta_t String;
+extern meta_t Array;
+extern meta_t Dict;
+extern meta_t Function;
+extern meta_t NativeFunction;
 
 typedef struct obj_float {
     obj_t       obj;
     REAL        value;
 } obj_float_t;
+
+typedef struct obj_string {
+    obj_t       obj;
+    INT         len;
+    char        *str;
+} obj_string_t;
 
 typedef struct obj_array {
     obj_t       obj;                /* header */
@@ -154,12 +135,18 @@ typedef struct obj_array {
     UINT        capacity;           /* size of backing store */
 } obj_array_t;
 
+typedef struct obj_dict {
+    obj_t       obj;                /* header */
+    dict_t      dict;               /* hash table */
+} obj_dict_t;
+
 typedef struct obj_function {
     obj_t       obj;                /* header */
     UINT        frame_size;         /* how much space must we reserve for args/locals? */
     inst_t      *code;              /* opcodes */
     /* source code? */
     /* AST? */
+    /* documentation */
 } obj_function_t;
 
 typedef VALUE (*native_fn_f)(context_t *ctx,

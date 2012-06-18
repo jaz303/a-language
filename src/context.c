@@ -12,7 +12,7 @@ obj_native_function_t* ctx_register_native_function(context_t *ctx, const char *
     
     // TODO: allocate from gc
     
-    obj->obj.type   = NATIVE_FUNCTION_T;
+    obj->obj.meta   = &NativeFunction;
     obj->name       = string_to_intern(ctx, name);
     obj->fn         = fn;
     obj->userdata   = userdata;
