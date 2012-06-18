@@ -3,6 +3,30 @@
 
 #include "menace/global.h"
 
+#define MNC_DICT_ITERATE(hsh, itervar, keyvar, valvar) \
+    for (hash_int_t itervar = 0; itervar < ((hash_t*)hsh)->n_buckets; ++itervar) { \
+        if (GH_BUCKET_STATE(((hash_t*)hsh)->flags, itervar) != GH_BUCKET_FULL) continue; \
+        VALUE keyvar = ((hash_t*)hsh)->buckets[itervar].key.value; \
+        VALUE valvar = ((hash_t*)hsh)->buckets[itervar].value.value;
+        
+#define MNC_DICT_ITERATE_END \
+    }
+    
+/* 
+ * This stuff is only exposed for use by the MNC_DICT_ITERATE macro.
+ * Please regard it as private!
+ */
+
+#define GH_BUCKET_EMPTY                     0
+#define GH_BUCKET_FULL                      1
+#define GH_BUCKET_DELETED                   2
+    
+// TODO: benchmark usefulness of all this bit-fiddling
+#define GH_BUCKET_STATE(flags, ix)          ((flags[ix>>2]>>((ix&3)<<1))&3)
+#define GH_SET_BUCKET_STATE(flags, ix, s)   (flags[ix>>2]=(flags[ix>>2]&(~(3<<((ix&3)<<1))))|(s<<((ix&3)<<1)))
+
+/* End Private */
+
 #define GH_DEBUG_PRINT(hsh) \
             printf("b=%lu occ=%lu sz=%lu ub=%lu\n", \
                         (unsigned long)(hsh)->n_buckets, \

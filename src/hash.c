@@ -3,14 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define GH_BUCKET_EMPTY                     0
-#define GH_BUCKET_FULL                      1
-#define GH_BUCKET_DELETED                   2
-    
-// TODO: benchmark usefulness of all this bit-fiddling
-#define GH_BUCKET_STATE(flags, ix)          ((flags[ix>>2]>>((ix&3)<<1))&3)
-#define GH_SET_BUCKET_STATE(flags, ix, s)   (flags[ix>>2]=(flags[ix>>2]&(~(3<<((ix&3)<<1))))|(s<<((ix&3)<<1)))
-
 #define HASH_ALLOC(hsh,sz)                  malloc(sz)
 #define HASH_REALLOC(hsh,ptr,sz)            realloc(ptr,sz)
 #define HASH_FREE(hsh,ptr)                  free(ptr)
