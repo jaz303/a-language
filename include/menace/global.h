@@ -52,6 +52,8 @@ typedef enum {
 	typedef uint32_t    INTERN;
 #endif
 
+#define PTR_MASK(ptr, op, mask) ((void*)(((UINT)ptr) op (mask)))
+
 typedef float REAL;
 
 /*
