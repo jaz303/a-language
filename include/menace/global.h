@@ -99,10 +99,16 @@ typedef union {
 /*
  * Object types
  */
+
+typedef struct {
+    void (*gc_mark)(context_t *ctx, VALUE val);
+    void (*gc_free)(context_t *ctx, VALUE val);
+} meta_t;
+
 typedef struct obj obj_t;
  
 typedef struct gc_header {
-    char _;
+    obj_t           *next;
 } gc_header_t;
 
 struct obj {
@@ -469,6 +475,7 @@ struct ast_index {
  */
 
 struct context {
+    obj_t           *gc_head;
     ast_pool_t      ast_pool;
     intern_t        intern;
 };

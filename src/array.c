@@ -1,41 +1,33 @@
 #include "menace/array.h"
+#include "menace/gc.h"
 
 #include <stdlib.h>
 
-// TODO: need to use GC memory allocation when it's ready
 // TODO: shrink array
 // TODO: tweakable growth factor?
 
+#define DEFAULT_CAPACITY 8
+
 static void grow(context_t *ctx, obj_array_t *ary) {
     UINT new_cap = ary->capacity * 2;
-    ary->values = realloc(ary->values, sizeof(VALUE) * new_cap);
+    ary->values = mnc_gc_realloc(ctx, ary->values, sizeof(VALUE) * new_cap);
     if (!ary->values) memory_error();
     ary->capacity = new_cap;
 }
 
-obj_array_t* array_create(context_t *ctx) {
-    return array_create_with_capacity(ctx, 8);
+void array_init(context_t *ctx, obj_array_t *ary) {
+    return array_init_with_capacity(ctx, ary, DEFAULT_CAPACITY);
 }
 
-obj_array_t* array_create_with_capacity(context_t *ctx, UINT capacity) {
-    // TODO: replace with gc_alloc()
-    obj_array_t *ary = malloc(sizeof(obj_array_t));
-    if (!ary) memory_error();
-    
-    ary->obj.type = ARRAY_T;
+void array_init_with_capacity(context_t *ctx, obj_array_t *ary, UINT capacity) {
     ary->length = 0;
     ary->capacity = roundup2(capacity);
-    
-    ary->values = malloc(sizeof(VALUE) * ary->capacity);
+    ary->values = mnc_gc_alloc(ctx, sizeof(VALUE) * ary->capacity);
     if (!ary->values) memory_error();
-    
-    return ary;
 }
 
-void array_destroy(context_t *ctx, obj_array_t *ary) {
-    // TODO: replace with gc_free()
-    free(ary->values);
-    free(ary);
+void array_cleanup(context_t *ctx, obj_array_t *ary) {
+    mnc_gc_free(ctx, ary->values);
 }
 
 UINT array_get_length(context_t *ctx, obj_array_t *ary) {

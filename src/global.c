@@ -21,6 +21,8 @@ int context_init(context_t *ctx) {
         }
     }
     
+    ctx->gc_head = NULL;
+    
     intern_init(ctx);
     ast_init(ctx);
     
