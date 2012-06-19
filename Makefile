@@ -11,6 +11,7 @@ SCANNER		=	src/scanner.c
 OBJECTS		=	src/array.o \
 				src/ast.o \
 				src/builtin_types.o \
+				src/compiler.o \
 				src/context.o \
 				src/debug.o \
 				src/gc.o \

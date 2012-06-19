@@ -297,6 +297,11 @@ void symbol_table_destroy(symbol_table_t *hsh) {
     (void)h;
 }
 
+int symbol_table_contains(symbol_table_t *hsh, INTERN sym) {
+    HASH_CAST(hsh);
+    return find_slot_by_symbol(h, sym) != h->n_buckets;
+}
+
 VALUE symbol_table_get(symbol_table_t *hsh, INTERN sym) {
     HASH_CAST(hsh);
     hash_int_t slot = find_slot_by_symbol(h, sym);

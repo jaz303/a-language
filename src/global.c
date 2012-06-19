@@ -23,6 +23,10 @@ int context_init(context_t *ctx) {
     
     ctx->gc_head = NULL;
     
+    ctx->code = NULL;
+    ctx->code_pos = 0;
+    ctx->code_capacity = 0;
+    
     intern_init(ctx);
     ast_init(ctx);
     

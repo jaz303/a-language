@@ -196,9 +196,11 @@ typedef struct obj_dict {
 } obj_dict_t;
 
 typedef struct obj_function {
-    obj_t       obj;                /* header */
-    UINT        frame_size;         /* how much space must we reserve for args/locals? */
-    inst_t      *code;              /* opcodes */
+    obj_t           obj;            /* header */
+    UINT            frame_size;     /* number of VALUE-sized slots required for args/locals */
+    inst_t          *code;          /* opcodes */
+    int             arity;          /* number of args */
+    symbol_table_t  symbols;        /* map symbols to frame slots - to support runtime eval */
     /* source code? */
     /* AST? */
     /* documentation */
@@ -477,6 +479,10 @@ struct context {
     obj_t           *gc_head;
     ast_pool_t      ast_pool;
     intern_t        intern;
+    
+    inst_t          *code;              /* array of instructions currently being compiled */
+    size_t          code_pos;           /* position of next instruction to be inserted in code array */
+    size_t          code_capacity;      /* max # of instructions in code array */
 };
 
 /*
