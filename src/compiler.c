@@ -176,7 +176,13 @@ COMPILE_FN(pass, ast_pass_t) {
 }
 
 COMPILE_FN(return, ast_return_t) {
-    return 0;
+    if (node->exp) {
+        // TODO: compile expression
+    } else {
+        EMIT_OP(OP_PUSH_NULL);
+    }
+    EMIT_OP(OP_RETURN);
+    return 1;
 }
 
 
