@@ -143,6 +143,7 @@ typedef union {
     INT     i;      /* integer operand */
     UINT    u;      /* unsigned integer operand */
     VALUE   v;      /* value operand */
+    INTERN  n;      /* name operand */
 } inst_t;
 
 /*
@@ -481,8 +482,8 @@ struct context {
     intern_t        intern;
     
     inst_t          *code;              /* array of instructions currently being compiled */
-    size_t          code_pos;           /* position of next instruction to be inserted in code array */
-    size_t          code_capacity;      /* max # of instructions in code array */
+    int             code_pos;           /* position of next instruction to be inserted in code array */
+    int             code_capacity;      /* max # of instructions in code array */
 };
 
 /*
