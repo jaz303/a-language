@@ -36,6 +36,7 @@ COMPILE_FN(statement,   ast_node_t);
 COMPILE_FN(while,       ast_while_t);
 COMPILE_FN(for,         ast_for_t);
 COMPILE_FN(assign,      ast_assign_t);
+COMPILE_FN(conditions,  ast_conditions_t);
 COMPILE_FN(if,          ast_if_t);
 COMPILE_FN(pass,        ast_pass_t);
 COMPILE_FN(return,      ast_return_t);
@@ -187,7 +188,7 @@ COMPILE_FN(while, ast_while_t) {
     INT loop_after = OFFSET;
     CTX->code[jump_pos].i = loop_after - jump_pos;
     
-    return 0;
+    return 1;
 }
 
 COMPILE_FN(for, ast_for_t) {
@@ -198,8 +199,63 @@ COMPILE_FN(assign, ast_assign_t) {
     return 0;
 }
 
+COMPILE_FN(conditions, ast_conditions_t) {
+    if (node == NULL) {
+        return 0;
+    } else if (node->exp) {
+        
+        INT cond_start,     /* start offset of this condition */
+            skip_jump,      /* offset at which we must write the length to skip to hit next condition */
+            body_start,     /* offset of condition body */
+            end_jump,       /* offset at which we must write the length to skip to exit the if-statement */
+            cond_len,       /* total length of this condition - expression + test + body */
+            rest_len;       /* total length of successive conditions */
+        
+        cond_start = OFFSET;
+        
+        /* compile expression and test, leaving placeholder for jump offset */
+        COMPILE(expression, ast_node_t, node->exp);
+        EMIT_OP(OP_JMP_IF_FALSE);
+        skip_jump = OFFSET;
+        EMIT_INT(0);
+        
+        /* compile the body */
+        body_start = OFFSET;
+        COMPILE(statements, ast_statements_t, node->body);
+        
+        /* write correct jump value to land at next condition */
+        CTX->code[skip_jump].i = OFFSET - body_start;
+        
+        /* write jump to exit if-statement, leaving placeholder for jump offset */
+        if (node->next) {
+            EMIT_OP(OP_JMP);
+            end_jump = OFFSET;
+            EMIT_INT(0);
+        }
+        
+        /* calculate length of this condition and successive conditions */
+        cond_len = OFFSET - cond_start;
+        rest_len = COMPILE(conditions, ast_conditions_t, node->next);
+        
+        /* write correct jump value to exit the if-statement */
+        if (node->next) {
+            CTX->code[end_jump].i = rest_len;
+        }
+        
+        /* return total length of this + successive conditions */
+        return cond_len + rest_len;
+    
+    } else {
+        INT start = OFFSET;
+        COMPILE(statements, ast_statements_t, node->body);
+        return OFFSET - start;
+    }
+}
+
 COMPILE_FN(if, ast_if_t) {
-    return 0;
+    ast_conditions_t *cond = node->conditions;
+    assert(cond);
+    return compile_conditions(cmpstate, cond);
 }
 
 COMPILE_FN(pass, ast_pass_t) {
@@ -404,5 +460,5 @@ COMPILE_FN(expression, ast_node_t) {
             // TODO: error report
         }
     }
-    return 0;
+    return 1;
 }
