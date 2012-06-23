@@ -1,0 +1,19 @@
+64 Bit Mode
+===========
+
+VALUE tagging in 64 bit mode, based on 8 byte alignment:
+
+0 0 0           PTR
+0 0 1           DOUBLE (63 MSBs == value, mask off last bit)
+0 1 0           INT (62 MSBs == value)
+1 0 0           SPECIAL
+
+SPECIAL extended tags:
+
+0 0 0 0         NULL                                    0b0000100
+0 0 0 1         FALSE                                   0b0001100
+0 0 1 1         TRUE                                    0b0011100
+0 0 1 0         SYMBOL      (32 MSBs == value)
+0 1 1 0         IDENT       (32 MSBs == value)
+1 0 1 0         COLOR       (32 MSBs == RGBA)
+1 1 1 0         ???
